@@ -1,35 +1,56 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
+# 编译生成的目标文件
+!/EasyX
 *.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
+*.o
 *.a
+*.so
+*.dll
 *.lib
 
-# Executables
+# 可执行文件
 *.exe
 *.out
-*.app
 
-./cmake-build-debug
-./.idea
+# 中间文件和临时文件
+*.sbr
+*.ilk
+*.pdb
+*.exp
+
+# Visual Studio项目文件（如果使用VS开发）
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcproj
+*.vcproj.user
+
+# CLion项目文件（如果使用CLion开发）
+.idea/
+*.iml
+
+# CMake构建相关文件
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+*.cmake
+
+# 调试文件
+*.dSYM/
+
+# 备份文件（例如由编辑器自动生成的备份文件）
+*~
+# 日志文件（如果项目有特定的日志文件不想纳入版本控制）
+*.log
+
+# 包含预处理结果的文件（比如预编译头文件相关等）
+*.gch
+
+# 自动生成的文档（例如Doxygen等工具生成的文档）
+docs/
+
+# 测试相关输出文件（比如单元测试框架生成的临时文件等）
+test/
+
+# 依赖管理工具相关文件（例如vcpkg等）
+vcpkg/
