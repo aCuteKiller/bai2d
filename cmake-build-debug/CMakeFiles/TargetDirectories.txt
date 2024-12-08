@@ -1,0 +1,3 @@
+D:/Users/22190/Desktop/Bai2D/cmake-build-debug/CMakeFiles/Bai2D.dir
+D:/Users/22190/Desktop/Bai2D/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/Users/22190/Desktop/Bai2D/cmake-build-debug/CMakeFiles/rebuild_cache.dir
