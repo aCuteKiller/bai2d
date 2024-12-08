@@ -9,16 +9,17 @@
 #include "bai2d_asset.h"
 
 MultiImageMesh *
-getMultiImageMesh(const std::string &dirName, const std::string &fileName, int endIndex, int width, int height,
+getMultiImageMesh(const std::string &dirName, const std::string &fileNamePrefix, int endIndex, int width, int height,
                   int playInterval, bool isLoop = true) {
     auto *pMesh = new MultiImageMesh(width, height);
     pMesh->setPlayInterval(playInterval)->setIsLoop(isLoop);
     for (int i = 0; i <= endIndex; i++) {
-        std::string path = "D:/Users/22190/Desktop/55/Persian Warrior/PNG/PNG Sequences/" + dirName + "/";
-        std::string name = fileName;
+        std::string path = dirName + "/";
+        std::string name = fileNamePrefix;
         name += StrUtils::numToStrFillZero(i, 3) += ".png";
         path += name;
-        GlobalAssetManager::getInstance().registeredImageAsset(name, path.c_str(), width, height);
+        std::cout << path << std::endl;
+        GlobalAssetManager::getInstance().registeredImageAsset(name, path, width, height);
         pMesh->addAsset(name);
     }
     return pMesh;

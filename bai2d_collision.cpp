@@ -1,6 +1,7 @@
 //
 // Created by 22190 on 2024/12/8.
 //
+#include <cassert>
 #include "bai2d_collision.h"
 
 RectangleCollision::RectangleCollision(int width, int height) : RectangleCollision(POINT{}, width, height) {}
@@ -13,19 +14,19 @@ RectangleCollision::RectangleCollision(const POINT &position, int width, int hei
 }
 
 POINT RectangleCollision::getLeftTop() const {
-    return {this->position.x - this->width / 2, this->position.y - this->height / 2};
+    return {this->position.x - this->getWidth() / 2, this->position.y - this->getHeight() / 2};
 }
 
 POINT RectangleCollision::getLeftBottom() const {
-    return {this->position.x - this->width / 2, this->position.y + this->height / 2};
+    return {this->position.x - this->getWidth() / 2, this->position.y + this->getHeight() / 2};
 }
 
 POINT RectangleCollision::getRightTop() const {
-    return {this->position.x + this->width / 2, this->position.y - this->height / 2};
+    return {this->position.x + this->getWidth() / 2, this->position.y - this->getHeight() / 2};
 }
 
 POINT RectangleCollision::getRightBottom() const {
-    return {this->position.x + this->width / 2, this->position.y + this->height / 2};
+    return {this->position.x + this->getWidth() / 2, this->position.y + this->getHeight() / 2};
 }
 
 bool RectangleCollision::isCollision(CollisionAble *c) {
@@ -47,11 +48,11 @@ RectangleCollision *RectangleCollision::setHeight(int h) {
 }
 
 int RectangleCollision::getWidth() const {
-    return this->width;
+    return this->width * this->getScale();
 }
 
 int RectangleCollision::getHeight() const {
-    return this->height;
+    return this->height * this->getScale();
 }
 
 void RectangleCollision::check() {
@@ -105,6 +106,17 @@ void CollisionAble::setMesh(Mesh *m) {
 
 Mesh &CollisionAble::getMesh() const {
     return *mesh;
+}
+
+CollisionAble *CollisionAble::setScale(int s) {
+    assert(s > 0);
+    this->scale = s;
+    this->mesh->setScale(s);
+    return this;
+}
+
+int CollisionAble::getScale() const {
+    return this->scale;
 }
 
 CollisionAble::~CollisionAble() = default;

@@ -289,11 +289,11 @@ BaseObject *BaseObject::setHeight(int h) {
 }
 
 int BaseObject::getWidth() const {
-    return width;
+    return width * this->getScale();
 }
 
 int BaseObject::getHeight() const {
-    return height;
+    return height * this->getScale();
 }
 
 BaseObject::BaseObject(const POINT &position, int w, int h) : visible(true), rotateAngle(0), renderingIndex(0) {
@@ -305,31 +305,42 @@ BaseObject::BaseObject(const POINT &position, int w, int h) : visible(true), rot
     this->anchor = ObjectAnchor::CENTER;
     this->width = w;
     this->height = h;
+    this->scale = 1;
 }
 
 POINT BaseObject::getAnchorOffset() {
     POINT offset{0, 0};
     switch (anchor) {
         case ObjectAnchor::LEFT_TOP:
-            offset.x = -width / 2;
-            offset.y = -height / 2;
+            offset.x = -getWidth() / 2;
+            offset.y = -getHeight() / 2;
             break;
         case ObjectAnchor::LEFT_BOTTOM:
-            offset.x = -width / 2;
-            offset.y = height / 2;
+            offset.x = -getWidth() / 2;
+            offset.y = getHeight() / 2;
             break;
         case ObjectAnchor::RIGHT_TOP:
-            offset.x = width / 2;
-            offset.y = -height / 2;
+            offset.x = getWidth() / 2;
+            offset.y = -getHeight() / 2;
             break;
         case ObjectAnchor::RIGHT_BOTTOM:
-            offset.x = width / 2;
-            offset.y = height / 2;
+            offset.x = getWidth() / 2;
+            offset.y = getHeight() / 2;
             break;
         case ObjectAnchor::CENTER:
             break;
     }
     return offset;
+}
+
+BaseObject *BaseObject::setScale(int s) {
+    assert(s > 0);
+    this->scale = s;
+    return this;
+}
+
+int BaseObject::getScale() const {
+    return this->scale;
 }
 
 void Pawn::updateAction() {
@@ -521,6 +532,13 @@ Object *Object::setIsCheckCollision(bool b) {
     return this;
 }
 
+Object *Object::setScale(int s) {
+    BaseObject::setScale(s);
+    this->collision->setScale(s);
+    this->mesh->setScale(s);
+    return this;
+}
+
 void Weight::draw() {
 
 }
@@ -544,6 +562,12 @@ void Actor::draw() {
     }
     if (this->isCheckCollision)
         this->collision->check();
+}
+
+Actor *Actor::setScale(int s) {
+    Object::setScale(s);
+    this->animationStateMachine.setScale(s);
+    return this;
 }
 
 

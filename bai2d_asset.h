@@ -29,6 +29,8 @@ public:
 
     Asset *setName(const std::string &n);
 
+    virtual ~Asset() = default;
+
     [[nodiscard]] std::string getName() const;
 
     [[nodiscard]] long long getCreateTime() const;
@@ -50,17 +52,19 @@ public:
 class ImageAsset : public Asset {
 protected:
     IMAGE *image;
-    LPCTSTR pImgFile;
-    int nWidth = 0;
-    int nHeight = 0;
+    std::string pImgFile;
+    int nWidth;
+    int nHeight;
+    bool bResize;
+    std::string filePath;
 public:
     explicit ImageAsset(const std::string &name,
-                        LPCTSTR pImgFile,
+                        const std::string& pImgFile,
                         int nWidth = 0,
                         int nHeight = 0,
                         bool bResize = false);
 
-    virtual ~ImageAsset();
+    ~ImageAsset() override;
 
     [[nodiscard]] IMAGE *getImage() const;
 
@@ -68,7 +72,9 @@ public:
 
     [[nodiscard]] int getHeight() const;
 
-    [[nodiscard]] LPCTSTR getFilePath() const;
+    [[nodiscard]] std::string getFilePath() const;
+
+    ImageAsset *resizeImage(int w, int h);
 };
 
 class AssetManager {
@@ -111,7 +117,7 @@ public:
     static GlobalAssetManager &getInstance();
 
     void registeredImageAsset(const std::string &name,
-                              LPCTSTR pImgFile,
+                              std::string pImgFile,
                               int nWidth = 0,
                               int nHeight = 0,
                               bool bResize = false);

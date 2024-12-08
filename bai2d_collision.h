@@ -13,6 +13,8 @@ enum class CollisionCategory {
 };
 
 class CollisionAble {
+private:
+    int scale = 1;
 protected:
     POINT position{};
     CollisionCategory category;
@@ -42,6 +44,7 @@ public:
     CollisionAble *setPosition(const POINT &point);
 
     [[nodiscard]] Mesh &getMesh() const;
+
     template<class T>
     T *castTo() {
         try {
@@ -51,6 +54,10 @@ public:
             throw std::runtime_error(e.what());
         }
     }
+
+    CollisionAble *setScale(int s);
+
+    [[nodiscard]] int getScale() const;
 
 };
 

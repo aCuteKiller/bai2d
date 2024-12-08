@@ -96,12 +96,14 @@ int main() {
 
     setbkcolor(WHITE);
 
-    auto *pDyingMesh = getMultiImageMesh("Dying", "Dying_", 14, 200, 200, 50, false);
-    auto *pIdleMesh = getMultiImageMesh("Idle", "Idle_", 17, 200, 200, 100);
-    auto *pRunningMesh = getMultiImageMesh("Running", "Running_", 11, 200, 200, 50);
-    auto *pFallingMesh = getMultiImageMesh("Falling Down", "Falling Down_", 5, 200, 200, 50, false);
-    auto *pStartJumpMesh = getMultiImageMesh("Jump Start", "Jump Start_", 5, 200, 200, 50, false);
-    auto *pJumpLoopMesh = getMultiImageMesh("Jump Loop", "Jump Loop_", 5, 200, 200, 50);
+
+    std::string assetDir = "D:/Users/22190/Desktop/55/Persian Warrior/PNG/PNG Sequences/";
+    auto *pDyingMesh = getMultiImageMesh(assetDir + "Dying", "Dying_", 14, 200, 200, 50, false);
+    auto *pIdleMesh = getMultiImageMesh(assetDir + "Idle", "Idle_", 17, 200, 200, 100);
+    auto *pRunningMesh = getMultiImageMesh(assetDir + "Running", "Running_", 11, 200, 200, 50);
+    auto *pFallingMesh = getMultiImageMesh(assetDir + "Falling Down", "Falling Down_", 5, 200, 200, 50, false);
+    auto *pStartJumpMesh = getMultiImageMesh(assetDir + "Jump Start", "Jump Start_", 5, 200, 200, 50, false);
+    auto *pJumpLoopMesh = getMultiImageMesh(assetDir + "Jump Loop", "Jump Loop_", 5, 200, 200, 50);
 
 //    testObj1.setMesh(new ImageMesh("Dying_001.png", 90, 90));
     testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::DYING),
@@ -146,6 +148,8 @@ int main() {
 //    globalInputEventManager.connect(KEY_S, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
     globalInputEventManager.connect(KEY_A, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorX));
     globalInputEventManager.connect(KEY_D, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorX));
+
+    testObj1.setScale(2);
 
     const std::future<void> &future = globalInputEventManager.runInputEventLoop();
     mainLoop();

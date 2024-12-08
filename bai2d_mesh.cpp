@@ -14,6 +14,7 @@ Mesh *Mesh::setRotateAngle(int angle) {
 Mesh::Mesh(const POINT &position) {
     this->rotateAngle = 0;
     this->position = position;
+    this->scale = 1;
 }
 
 Mesh *Mesh::setPosition(const POINT &point) {
@@ -51,21 +52,31 @@ void Mesh::show() {
     this->afterDraw();
 }
 
+Mesh *Mesh::setScale(int s) {
+    assert(s > 0);
+    this->scale = s;
+    return this;
+}
+
 void RectMesh::draw() {
     // 计算所有旋转后的上下左右点
     POINT pts[5];
     // position(中心点) rotateAngle width height计算新的坐标点
     pts[0] = EasyXUtils::getRotatePoint(this->position,
-                                        {this->position.x - this->width / 2, this->position.y - this->height / 2},
+                                        {this->position.x - this->getWidth() / 2,
+                                         this->position.y - this->getHeight() / 2},
                                         this->rotateAngle);
     pts[1] = EasyXUtils::getRotatePoint(this->position,
-                                        {this->position.x + this->width / 2, this->position.y - this->height / 2},
+                                        {this->position.x + this->getWidth() / 2,
+                                         this->position.y - this->getHeight() / 2},
                                         this->rotateAngle);
     pts[2] = EasyXUtils::getRotatePoint(this->position,
-                                        {this->position.x + this->width / 2, this->position.y + this->height / 2},
+                                        {this->position.x + this->getWidth() / 2,
+                                         this->position.y + this->getHeight() / 2},
                                         this->rotateAngle);
     pts[3] = EasyXUtils::getRotatePoint(this->position,
-                                        {this->position.x - this->width / 2, this->position.y + this->height / 2},
+                                        {this->position.x - this->getWidth() / 2,
+                                         this->position.y + this->getHeight() / 2},
                                         this->rotateAngle);
     pts[4] = pts[0];
     this->isFill() ? fillpolygon(pts, 5) : polyline(pts, 5);
@@ -82,11 +93,11 @@ RectMesh *RectMesh::setHeight(int h) {
 }
 
 int RectMesh::getHeight() const {
-    return this->height;
+    return this->height * this->scale;
 }
 
 int RectMesh::getWidth() const {
-    return this->width;
+    return this->width * this->scale;
 }
 
 RectMesh::RectMesh(const POINT &position, int width, int height) : GeometryMesh(position), width(width),
@@ -129,13 +140,13 @@ CircleMesh *CircleMesh::setRadius(int r) {
 }
 
 int CircleMesh::getRadius() const {
-    return this->radius;
+    return this->radius * this->scale;
 }
 
 void CircleMesh::draw() {
     // 圆不用旋转，直接绘图
-    this->isFill() ? fillcircle(this->position.x, this->position.y, this->radius) :
-    circle(this->position.x, this->position.y, this->radius);
+    this->isFill() ? fillcircle(this->position.x, this->position.y, this->getRadius()) :
+    circle(this->position.x, this->position.y, this->getRadius());
 }
 
 ObjectStateAnimation::ObjectStateAnimation(Mesh *mesh) {
@@ -238,6 +249,13 @@ AnimationStateMachine *AnimationStateMachine::resetPlayPace() {
     return this;
 }
 
+AnimationStateMachine *AnimationStateMachine::setScale(int s) {
+    for (auto &[state, animation]: this->animations) {
+        animation->getMesh().setScale(s);
+    }
+    return this;
+}
+
 MirrorAble *MirrorAble::setMirrorX(MirrorAble::ToWardsX x) {
     this->xTowards = x;
     return this;
@@ -278,6 +296,7 @@ BaseImageMesh::BaseImageMesh(int width, int height) : Mesh(POINT{}) {
     assert(width > 0 && height > 0);
     this->width = width;
     this->height = height;
+    this->lastScale = 1;
 }
 
 BaseImageMesh *BaseImageMesh::setWidth(int w) {
@@ -293,11 +312,11 @@ BaseImageMesh *BaseImageMesh::setHeight(int h) {
 }
 
 int BaseImageMesh::getWidth() const {
-    return this->width;
+    return this->width * scale;
 }
 
 int BaseImageMesh::getHeight() const {
-    return this->height;
+    return this->height * scale;
 }
 
 void ImageMesh::draw() {
@@ -305,6 +324,15 @@ void ImageMesh::draw() {
     IMAGE tempImg;
     rotateimage(&tempImg, this->asset->getImage(), this->getRotateAngle());
     EasyXUtils::putImageAlpha(position, getWidth(), getHeight(), tempImg, isMirrorX(), isMirrorY());
+}
+
+ImageMesh *ImageMesh::setScale(int s) {
+    Mesh::setScale(s);
+    if (s != this->lastScale) {
+        this->asset->resizeImage(this->getWidth(), this->getHeight());
+        this->lastScale = s;
+    }
+    return this;
 }
 
 MultiImageMesh::MultiImageMesh(int width, int height) : BaseImageMesh(width, height), ReversePlayAble(),
@@ -375,6 +403,17 @@ void MultiImageMesh::backwardPlay() {
         if (this->currentIndex < 0)
             this->resetCurrentIndex();
     }
+}
+
+MultiImageMesh *MultiImageMesh::setScale(int s) {
+    Mesh::setScale(s);
+    if (s != this->lastScale) {
+        for (Asset *asset: this->assetManager) {
+            dynamic_cast<ImageAsset *>(asset)->resizeImage(this->getWidth(), getHeight());
+        }
+        this->lastScale = s;
+    }
+    return this;
 }
 
 MultiImageMesh::~MultiImageMesh() = default;

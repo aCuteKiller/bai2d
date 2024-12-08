@@ -43,11 +43,14 @@ private:
     ObjectAnchor anchor;
     int width;
     int height;
+    int scale;
 protected:
     static const int DEFAULT_WIDTH;
     static const int DEFAULT_HEIGHT;
 
     void updateRealPosition();
+
+    BaseObject *setWidth(int w);
 
 public:
 
@@ -101,8 +104,6 @@ public:
 
     [[nodiscard]] ObjectAnchor getAnchor() const;
 
-    BaseObject *setWidth(int w);
-
     [[nodiscard]] int getWidth() const;
 
     BaseObject *setHeight(int h);
@@ -110,6 +111,10 @@ public:
     [[nodiscard]] int getHeight() const;
 
     POINT getAnchorOffset();
+
+    virtual BaseObject *setScale(int s);
+
+    [[nodiscard]] int getScale() const;
 
 };
 
@@ -148,6 +153,8 @@ public:
     void draw() override;
 
     Object *setIsCheckCollision(bool b);
+
+    Object *setScale(int s) override;
 };
 
 class Actor : public Object {
@@ -157,6 +164,8 @@ public:
     Actor *update() override;
 
     void draw() override;
+
+    Actor *setScale(int s) override;
 
     AnimationStateMachine &getAnimationStateMachine();
 };
