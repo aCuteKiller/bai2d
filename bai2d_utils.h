@@ -9,6 +9,7 @@
 #include <chrono>
 #include "graphics.h"
 #include <iostream>
+#include <cmath>
 
 #pragma comment (lib, "Gdiplus.lib")
 
@@ -80,6 +81,19 @@ public:
         }
         putimage(position.x - dw / 2, position.y - dh / 2, dw, dh, &maskImg, 0, 0, SRCAND);
         putimage(position.x - dw / 2, position.y - dh / 2, dw, dh, &imgTemp, 0, 0, SRCPAINT);
+    }
+
+    static POINT getRotatePoint(POINT center, POINT point, int angle) {
+        double radian = angle * PI / 180;
+        double x = point.x - center.x;
+        double y = point.y - center.y;
+        double x1 = x * cos(radian) - y * sin(radian);
+        double y1 = x * sin(radian) + y * cos(radian);
+        return {(int) (x1 + center.x), (int) (y1 + center.y)};
+    }
+
+    static POINT getOffsetPoint(POINT origin, POINT offset) {
+        return {origin.x + offset.x, origin.y + offset.y};
     }
 };
 

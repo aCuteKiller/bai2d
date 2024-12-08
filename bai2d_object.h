@@ -14,327 +14,14 @@
 #include "bai2d_event_base.h"
 #include <cmath>
 #include <set>
-#include <algorithm>]
+#include <algorithm>
 #include "bai2d_asset.h"
+#include "bai2d_mesh.h"
+#include "bai2d_collision.h"
 
 class BaseObject;
 
-class Mesh;
-
-static POINT getRotatePoint(POINT center, POINT point, int angle) {
-    double radian = angle * PI / 180;
-    double x = point.x - center.x;
-    double y = point.y - center.y;
-    double x1 = x * cos(radian) - y * sin(radian);
-    double y1 = x * sin(radian) + y * cos(radian);
-    return {(int) (x1 + center.x), (int) (y1 + center.y)};
-}
-
-static POINT getOffsetPoint(POINT origin, POINT offset) {
-    return {origin.x + offset.x, origin.y + offset.y};
-}
-
-class Mesh;
-
-class MirrorAble {
-
-public:
-    enum class ToWardsX {
-        LEFT,
-        RIGHT
-    };
-
-    enum class ToWardsY {
-        UP,
-        DOWN
-    };
-private:
-    MirrorAble::ToWardsX xTowards;
-    MirrorAble::ToWardsY yTowards;
-public:
-
-    MirrorAble();;
-
-    MirrorAble *setMirrorX(ToWardsX x);
-
-    MirrorAble *setMirrorY(ToWardsY y);
-
-    [[nodiscard]] ToWardsX getTowardsX() const;
-
-    [[nodiscard]] ToWardsY getTowardsY() const;
-
-    [[nodiscard]] bool isMirrorX() const;
-
-    [[nodiscard]] bool isMirrorY() const;
-};
-
-class Mesh : public MirrorAble {
-protected:
-    POINT position{};
-    int rotateAngle;
-public:
-    explicit Mesh();
-
-    explicit Mesh(const POINT &position);
-
-    [[maybe_unused]] Mesh(const Mesh &mesh);
-
-    virtual ~Mesh();
-
-    virtual void draw() = 0;
-
-    void show();
-
-    virtual void beforeDraw() {};
-
-    virtual void afterDraw() {};
-
-    Mesh *setPosition(const POINT &point);
-
-    Mesh *setPosition(int x, int y);
-
-    Mesh *setRotateAngle(int angle);
-
-    [[nodiscard]] POINT getPosition() const;
-
-    [[nodiscard]] int getRotateAngle() const;
-
-    template<class T>
-    T *castTo() {
-        try {
-            return dynamic_cast<T *>(this);
-        } catch (std::bad_cast &e) {
-            std::cout << "error: " << e.what() << std::endl;
-            throw std::runtime_error(e.what());
-        }
-    }
-
-};
-
-class GeometryMesh : public Mesh {
-private:
-    bool fill;
-    COLORREF color, tempColor;
-public:
-    explicit GeometryMesh() : GeometryMesh(POINT{}) {};
-
-    explicit GeometryMesh(const POINT &position) : fill(false), color(WHITE), tempColor(color), Mesh(position) {};
-
-    GeometryMesh *setFill(bool b);
-
-    [[nodiscard]] bool isFill() const;
-
-    GeometryMesh *setColor(COLORREF c);
-
-    void beforeDraw() override;
-
-    void afterDraw() override;
-};
-
-class RectMesh : public GeometryMesh {
-protected:
-    int width;
-    int height;
-
-public:
-    explicit RectMesh(int width, int height) : RectMesh(POINT{0, 0}, width, height) {};
-
-    explicit RectMesh(const POINT &position, int width, int height);
-
-    RectMesh *setWidth(int w);
-
-    RectMesh *setHeight(int h);
-
-    [[nodiscard]] int getWidth() const;
-
-    [[nodiscard]] int getHeight() const;
-
-    void draw() override;
-};
-
-class CircleMesh : public GeometryMesh {
-protected:
-    int radius;
-public:
-    explicit CircleMesh(int radius) : CircleMesh(POINT{0, 0}, radius) {};
-
-    explicit CircleMesh(const POINT &position, int radius);
-
-    CircleMesh *setRadius(int r);
-
-    [[nodiscard]] int getRadius() const;
-
-    void draw() override;
-};
-
-/**
- * 带图片的图形
- * 朝向基准是右下
- */
-class BaseImageMesh : public Mesh {
-private:
-    int width;
-    int height;
-public:
-
-    explicit BaseImageMesh(int width, int height);
-
-    BaseImageMesh *setWidth(int w);
-
-    BaseImageMesh *setHeight(int h);
-
-    [[nodiscard]] int getWidth() const;
-
-    [[nodiscard]] int getHeight() const;
-
-};
-
-class ImageMesh : public BaseImageMesh {
-private:
-    ImageAsset *asset;
-
-public:
-    explicit ImageMesh(const std::string &assetName, int width, int height);
-
-    void draw() override;
-};
-
-class MultiImageMesh : public BaseImageMesh {
-private:
-    AssetManager assetManager;
-    int currentIndex;
-    bool isLoop;
-    int playInterval;
-    long long lastTime;
-public:
-    explicit MultiImageMesh(int width, int height);
-
-    ~MultiImageMesh() override;
-
-    MultiImageMesh *addAsset(const std::string &assetName);
-
-    MultiImageMesh *setPlayInterval(int i);
-
-    MultiImageMesh *setIsLoop(bool isLoop);
-
-    MultiImageMesh *resetCurrentIndex();
-
-    void draw() override;
-
-    void beforeDraw() override;
-};
-
-class ObjectStateAnimation {
-private:
-    Mesh *mesh;
-public:
-    explicit ObjectStateAnimation(Mesh *mesh);
-
-    Mesh &getMesh();
-
-    virtual void play();
-};
-
-class AnimationStateMachine : public MirrorAble {
-private:
-    std::map<byte, ObjectStateAnimation *> animations;
-    byte currentState;
-public:
-    AnimationStateMachine();
-
-    ~AnimationStateMachine();
-
-    void addAnimation(byte state, ObjectStateAnimation *animation);
-
-    void removeAnimation(byte state);
-
-    ObjectStateAnimation *getCurrentAnimation();
-
-    AnimationStateMachine *setCurrentState(byte stateEnum);
-
-    void play();
-};
-
-enum class CollisionCategory {
-    RECTANGLE,
-    CIRCLE,
-};
-
-class CollisionAble {
-protected:
-    POINT position{};
-    CollisionCategory category;
-    Mesh *mesh;
-
-    void setMesh(Mesh *m);
-
-public:
-    virtual ~CollisionAble();
-
-    explicit CollisionAble(CollisionCategory category, const POINT &position);
-
-    explicit CollisionAble(CollisionCategory category, const POINT &position, Mesh *m);
-
-    virtual bool isCollision(CollisionAble *object) = 0;
-
-    virtual void check();
-
-    [[nodiscard]] CollisionCategory getCategory() const;
-
-    [[nodiscard]] POINT getPosition() const;
-
-    CollisionAble *setPosition(const POINT &point);
-
-    [[nodiscard]] Mesh &getMesh() const;
-
-    template<class T>
-    T *castTo() {
-        try {
-            return (T *) (this);
-        } catch (std::bad_cast &e) {
-            std::cout << "error: " << e.what() << std::endl;
-            throw std::runtime_error(e.what());
-        }
-    }
-
-};
-
-class RectangleCollision : public CollisionAble {
-protected:
-    int width;
-    int height;
-public:
-    RectangleCollision(const POINT &position, int width, int height);
-
-    bool isCollision(CollisionAble *c) override;
-
-    RectangleCollision *setWidth(int w);
-
-    RectangleCollision *setHeight(int h);
-
-    [[nodiscard]] int getWidth() const;
-
-    [[nodiscard]] int getHeight() const;
-
-    [[nodiscard]] POINT getLeftTop() const;
-
-    [[nodiscard]] POINT getLeftBottom() const;
-
-    [[nodiscard]] POINT getRightTop() const;
-
-    [[nodiscard]] POINT getRightBottom() const;
-
-    void check() override;
-};
-
-class CollisionLogicHandler {
-public:
-    static bool isCollisionFirstRect(const RectangleCollision &c1, const CollisionAble &c2);
-
-    static bool isCollision(const RectangleCollision &c1, const RectangleCollision &c2);
-};
-
-class ObjectManager;
+class BaseObjectManager;
 
 enum ObjectAnchor {
     LEFT_TOP,
@@ -350,7 +37,7 @@ private:
     POINT position{};
     int renderingIndex{};
     int rotateAngle;
-    ObjectManager *attachObjs;
+    BaseObjectManager *attachObjs;
     BaseObject *parentObj;
     POINT parentOffset{};
     ObjectAnchor anchor;
@@ -454,41 +141,52 @@ public:
 
     [[nodiscard]] Mesh &getMesh() const;
 
-    [[nodiscard]] CollisionAble &getCollision() const;
+    [[nodiscard]] CollisionAble *getCollision() const;
 
-    [[nodiscard]] bool isCollision(Object &object) const;
+    [[nodiscard]] bool isCollision(Object *object) const;
 
     void draw() override;
 
     Object *setIsCheckCollision(bool b);
 };
 
-class StaticObject : public Object {
-protected:
-};
-
-class ObjectWithState : public Object {
+class Actor : public Object {
 private:
     AnimationStateMachine animationStateMachine;
 public:
-    ObjectWithState *update() override;
+    Actor *update() override;
 
     void draw() override;
 
     AnimationStateMachine &getAnimationStateMachine();
 };
 
-class MoveableObject : public ObjectWithState {
+class Pawn : public Actor {
 private:
-    static int ACTION_FRAME_INTERVAL;
-    POINT moveVector{};
-    int speed = 0;
-    long long lastMoveTime = 0;
+    const static int ACTION_FRAME_INTERVAL;
+    const static int DEFAULT_JUMP_HEIGHT;
+    const static int DEFAULT_IN_THE_AIR_TIME;
+    const static int DEFAULT_JUMP_SPEED;
+    POINT towards{};
+    int speed;
+    long long lastMoveTime;
+    POINT beforeJumpPosition{};
+    bool jumping;
+    bool falling;
+    int jumpHeight;
+    int maxJumpTimes;
+    int hasJumpTimes;
+    int jumpSpeed;
+    int realJumpHeight;
+    int inTheAirTime;
+    long long startInTheAir;
+
+    void jumpOneStep();
 
 public:
-    MoveableObject() : ObjectWithState() {}
+    Pawn();
 
-    MoveableObject *update() override;
+    Pawn *update() override;
 
     virtual void updateAction();
 
@@ -500,17 +198,47 @@ public:
 
     virtual bai::slot moveRight(const SlotArgs &args);
 
-    virtual bai::slot resetVectorX();
+    virtual bai::slot resetVectorX(const SlotArgs &args);
 
-    virtual bai::slot resetVectorY();
+    virtual bai::slot resetVectorY(const SlotArgs &args);
 
-    virtual void afterMove() {};
+    virtual void toRight() {};
 
-    virtual bai::signal moveStop() {};
+    virtual void toLeft() {};
+
+    virtual void toUp() {};
+
+    virtual void toDown() {};
+
+    virtual void move() {};
+
+    virtual void idle() {};
+
+    virtual void startJump() {};
+
+    virtual void jumpLoop() {};
+
+    virtual void fallingDown() {};
+
+    virtual void endJump() {};
 
     void setSpeed(int s);
 
     [[nodiscard]] int getSpeed() const;
+
+    [[nodiscard]] bool isJumping() const;
+
+    [[nodiscard]] bool isFalling() const;
+
+    Pawn *setJumpHeight(int height);
+
+    Pawn *setMaxJumpTimes(int times);
+
+    Pawn *setJumpSpeed(int s);
+
+    bai::slot jump(const SlotArgs &args);
+
+    [[nodiscard]] POINT getTowards() const;
 
 };
 
@@ -524,14 +252,14 @@ public:
 
 };
 
-class ObjectManager {
+class BaseObjectManager {
 private:
     std::vector<BaseObject *> objects;
 
 public:
-    ObjectManager();
+    BaseObjectManager();
 
-    ~ObjectManager();
+    ~BaseObjectManager();
 
     [[nodiscard]] bool isEmpty() const;
 

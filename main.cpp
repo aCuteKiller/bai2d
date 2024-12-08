@@ -2,82 +2,79 @@
 #include "bai2d_input.h"
 #include "bai2d_registered_input.h"
 #include "bai2d_object.h"
+#include "bai2d_shortcut_func.h"
 
 void mainLoop();
 
 void mainLoopFrameHandle();
 
-// 根据移动方向镜像动画 TODO
-MultiImageMesh *
-getMultiImageMesh(const std::string &dirName, const std::string &fileName, int endIndex, int width, int height,
-                  int playInterval, bool isLoop = true) {
-    auto *pMesh = new MultiImageMesh(width, height);
-    pMesh->setPlayInterval(playInterval)->setIsLoop(isLoop);
-    for (int i = 0; i <= endIndex; i++) {
-        std::string path = "D:/Users/22190/Desktop/55/Persian Warrior/PNG/PNG Sequences/" + dirName + "/";
-        std::string name = fileName;
-        name += StrUtils::numToStrFillZero(i, 3) += ".png";
-        path += name;
-        GlobalAssetManager::getInstance().registeredImageAsset(name, path.c_str(), width, height);
-        pMesh->addAsset(name);
-    }
-    return pMesh;
-}
-
 enum struct TestObjectStateEnum : byte {
     IDLE,
     RUNNING,
-    DYING
+    DYING,
+    FALLING,
+    START_JUMP,
+    JUMP_LOOP,
 };
 
-class TestObj : public MoveableObject {
+class TestObj : public Pawn {
 private:
 public:
-    bai::slot resetVectorX() override {
+    bai::slot resetVectorX(const SlotArgs &args) override {
         if (!(KEY_A.isPressing() || KEY_D.isPressing()))
-            MoveableObject::resetVectorX();
+            Pawn::resetVectorX(args);
+        else if (KEY_A.isPressing()) {
+            this->moveLeft(args);
+        } else if (KEY_D.isPressing()) {
+            this->moveRight(args);
+        }
     }
 
-    bai::slot resetVectorY() override {
+    bai::slot resetVectorY(const SlotArgs &args) override {
         if (!(KEY_W.isPressing() || KEY_S.isPressing()))
-            MoveableObject::resetVectorY();
+            Pawn::resetVectorY(args);
+        else if (KEY_W.isPressing()) {
+            this->moveUp(args);
+        } else if (KEY_S.isPressing()) {
+            this->moveDown(args);
+        }
     }
 
-    void afterMove() override {
-        this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::RUNNING));
-    }
-
-    bai::signal moveStop() override {
-        this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::IDLE));
-    }
-
-    bai::slot dying() {
-        this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::DYING));
-    }
-
-    void moveUp(const SlotArgs &args) override {
-        this->getAnimationStateMachine().setMirrorY(MirrorAble::ToWardsY::UP);
-        MoveableObject::moveUp(args);
-    }
-
-    void moveDown(const SlotArgs &args) override {
-        this->getAnimationStateMachine().setMirrorY(MirrorAble::ToWardsY::DOWN);
-        MoveableObject::moveDown(args);
-    }
-
-    void moveLeft(const SlotArgs &args) override {
-        this->getAnimationStateMachine().setMirrorX(MirrorAble::ToWardsX::LEFT);
-        MoveableObject::moveLeft(args);
-    }
-
-    void moveRight(const SlotArgs &args) override {
+    void toRight() override {
         this->getAnimationStateMachine().setMirrorX(MirrorAble::ToWardsX::RIGHT);
-        MoveableObject::moveRight(args);
+    }
+
+    void toLeft() override {
+        this->getAnimationStateMachine().setMirrorX(MirrorAble::ToWardsX::LEFT);
+    }
+
+    void startJump() override {
+        this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::START_JUMP));
+    }
+
+    void fallingDown() override {
+        this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::FALLING));
+    }
+
+    void jumpLoop() override {
+        this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::JUMP_LOOP));
+    }
+
+    void move() override {
+        if (!this->isJumping())this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::RUNNING));
+    }
+
+    void idle() override {
+        if (!this->isJumping())this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::IDLE));
+    }
+
+    void dying() {
+        this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::DYING));
     }
 };
 
 TestObj testObj1, testObj2, testObj3;
-ObjectManager objectManager;
+BaseObjectManager objectManager;
 
 int main() {
     // 设置控制台输出代码页为UTF-8
@@ -87,7 +84,7 @@ int main() {
 
     GlobalInputEventManager &globalInputEventManager = GlobalInputEventManager::getInstance();
 
-    testObj1.attach(&testObj2);
+//    testObj1.attach(&testObj2);
     testObj2.setPosition(50, 50);
     testObj2.setParentOffset(40, 40);
     testObj3.setParentOffset(-20, 20);
@@ -102,6 +99,9 @@ int main() {
     auto *pDyingMesh = getMultiImageMesh("Dying", "Dying_", 14, 200, 200, 50, false);
     auto *pIdleMesh = getMultiImageMesh("Idle", "Idle_", 17, 200, 200, 100);
     auto *pRunningMesh = getMultiImageMesh("Running", "Running_", 11, 200, 200, 50);
+    auto *pFallingMesh = getMultiImageMesh("Falling Down", "Falling Down_", 5, 200, 200, 50, false);
+    auto *pStartJumpMesh = getMultiImageMesh("Jump Start", "Jump Start_", 5, 200, 200, 50, false);
+    auto *pJumpLoopMesh = getMultiImageMesh("Jump Loop", "Jump Loop_", 5, 200, 200, 50);
 
 //    testObj1.setMesh(new ImageMesh("Dying_001.png", 90, 90));
     testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::DYING),
@@ -110,12 +110,19 @@ int main() {
                                                      new ObjectStateAnimation(pIdleMesh));
     testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::RUNNING),
                                                      new ObjectStateAnimation(pRunningMesh));
+    testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::START_JUMP),
+                                                     new ObjectStateAnimation(pStartJumpMesh));
+    testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::FALLING),
+                                                     new ObjectStateAnimation(pFallingMesh));
+    testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::JUMP_LOOP),
+                                                     new ObjectStateAnimation(pJumpLoopMesh));
+
     testObj1.getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::IDLE));
     testObj1.setRenderingIndex(10);
-
+    testObj1.setMaxJumpTimes(2);
 
     testObj2.setAnchor(ObjectAnchor::RIGHT_BOTTOM);
-    testObj1.setPosition(200, 200);
+    testObj1.setPosition(400, 400);
     testObj2.setMesh(new CircleMesh(50));
     testObj2.getMesh().castTo<GeometryMesh>()->setColor(BLACK);
     testObj2.getMesh().castTo<GeometryMesh>()->setColor(BLACK);
@@ -125,17 +132,18 @@ int main() {
 
     testObj1.setSpeed(3);
 //    testObj1.setRotateAngle(45);
-    testObj1.setIsCheckCollision(false)->getCollision().getMesh().castTo<GeometryMesh>()->setColor(RED);
-    testObj1.getCollision().castTo<RectangleCollision>()->setWidth(60)->setHeight(60);
+    testObj1.setIsCheckCollision(true)->getCollision()->getMesh().castTo<GeometryMesh>()->setColor(RED);
+    testObj1.getCollision()->castTo<RectangleCollision>()->setWidth(60)->setHeight(100);
 
-    globalInputEventManager.connect(KEY_W, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveUp));
-    globalInputEventManager.connect(KEY_S, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveDown));
+//    globalInputEventManager.connect(KEY_W, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveUp));
+//    globalInputEventManager.connect(KEY_S, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveDown));
     globalInputEventManager.connect(KEY_A, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveLeft));
     globalInputEventManager.connect(KEY_D, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveRight));
     globalInputEventManager.connect(KEY_Q, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::dying));
+    globalInputEventManager.connect(KEY_SPACE, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::jump));
 
-    globalInputEventManager.connect(KEY_W, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
-    globalInputEventManager.connect(KEY_S, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
+//    globalInputEventManager.connect(KEY_W, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
+//    globalInputEventManager.connect(KEY_S, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
     globalInputEventManager.connect(KEY_A, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorX));
     globalInputEventManager.connect(KEY_D, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorX));
 
