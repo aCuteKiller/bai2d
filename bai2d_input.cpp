@@ -116,8 +116,8 @@ void MouseInput::setMoveState(UCHAR state) {
     this->moveState = state;
 }
 
-UCHAR MouseInput::MOVING_STATE = 0x01;
-UCHAR MouseInput::STATIC_STATE = 0x02;
+UCHAR MouseInput::MOVING_STATE = 0x11;
+UCHAR MouseInput::STATIC_STATE = 0x22;
 
 InputManager::InputManager() {
     this->inputs = std::vector<InputBase *>();
@@ -341,17 +341,18 @@ InputInfo GlobalInputEventManager::updateInputState() {
                 }
                 break;
         }
+        // 如果没有更新，且上一帧是按下和持续按下，则进true；
+        inputManager.updateTrueToPress();
         if (lastMousePosition.x != exMessage.x || lastMousePosition.y != exMessage.y) {
             this->inputManager.updateToMouseMoving();
             lastMousePosition = POINT{exMessage.x, exMessage.y};
             this->lastMoveTime = TimeUtils::getNowMilliseconds();
         }
     }
+    inputManager.updateTrueToPress();
     if (TimeUtils::getNowMilliseconds() - this->lastMoveTime >= 50) {
         this->inputManager.updateToMouseStatic();
     }
-    // 如果没有更新，且上一帧是按下和持续按下，则进true；
-    inputManager.updateTrueToPress();
     inputManager.updateFalseToNoActive();
 
     InputInfo inputInfo;

@@ -97,11 +97,13 @@ public:
     bai::slot cameraMoveToMouse(const SlotArgs &args) {
         if (!scene.getCamera().getParentObj()) {
             InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
+            std::cout << inputInfo->clickPosition.x << " " << inputInfo->clickPosition.y << std::endl;
             scene.getCamera().moveToTargetPosition(inputInfo->clickPosition);
         }
     }
 
     bai::slot cameraOffsetRefViewCenter(const SlotArgs &args) {
+        std::cout << "moving" << std::endl;
         if (!scene.getCamera().getParentObj() && MOUSE_MIDDLE.isPressing()) {
             InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
             scene.getCamera().offsetRefViewCenter(inputInfo->clickPosition);
@@ -109,6 +111,7 @@ public:
     }
 
     bai::slot test(const SlotArgs &args) {
+        std::cout << "static" << std::endl;
         if (!scene.getCamera().getParentObj() && MOUSE_MIDDLE.isPressing()) {
             InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
             scene.getCamera().offsetRefViewCenter(inputInfo->clickPosition);
@@ -197,7 +200,7 @@ int main() {
     globalInputEventManager.connect(KEY_E, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::scale));
     globalInputEventManager.connect(KEY_Q, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::shrink));
     globalInputEventManager.connect(KEY_F, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::attachCamera));
-    globalInputEventManager.connect(MOUSE_LEFT, SIGNAL(&MouseInput::click), testObj1,
+    globalInputEventManager.connect(MOUSE_LEFT, SIGNAL(&MouseInput::pressed), testObj1,
                                     SLOT(&TestObj::cameraMoveToMouse));
     globalInputEventManager.connect(MOUSE_MOVING, SIGNAL(&MouseInput::moving), testObj1,
                                     SLOT(&TestObj::cameraOffsetRefViewCenter));
@@ -243,6 +246,9 @@ void mainLoopFrameHandle() {
     cleardevice();
 
     scene.render();
+
+//    std::cout << "pressed:" << MOUSE_MIDDLE.isPressed() << std::endl;
+//    std::cout << "pressing:" << MOUSE_MIDDLE.isPressing() << std::endl;
 
     const TCHAR *text;
     text = ("FPS: " + std::to_string(REAL_RENDERING_FPS)).c_str();
