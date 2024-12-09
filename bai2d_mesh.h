@@ -49,7 +49,7 @@ private:
 protected:
     POINT position{};
     int rotateAngle;
-    int scale;
+    double scale;
 public:
     explicit Mesh();
 
@@ -87,7 +87,7 @@ public:
         }
     }
 
-    virtual Mesh *setScale(int s);
+    virtual Mesh *setScale(double s);
 
 };
 
@@ -179,8 +179,6 @@ public:
     explicit ImageMesh(const std::string &assetName, int width, int height);
 
     void draw() override;
-
-    ImageMesh *setScale(int s) override;
 };
 
 class ReversePlayAble {
@@ -222,8 +220,6 @@ public:
     void draw() override;
 
     void beforeDraw() override;
-
-    MultiImageMesh *setScale(int s) override;
 };
 
 class ObjectStateAnimation : public ReversePlayAble {
@@ -270,7 +266,7 @@ public:
 
     AnimationStateMachine *updateAll(const POINT &point, int angle);
 
-    AnimationStateMachine* setScale(int s);
+    AnimationStateMachine *setScale(double s);
 
 };
 

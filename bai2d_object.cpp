@@ -333,13 +333,13 @@ POINT BaseObject::getAnchorOffset() {
     return offset;
 }
 
-BaseObject *BaseObject::setScale(int s) {
+BaseObject *BaseObject::setScale(double s) {
     assert(s > 0);
     this->scale = s;
     return this;
 }
 
-int BaseObject::getScale() const {
+double BaseObject::getScale() const {
     return this->scale;
 }
 
@@ -532,7 +532,7 @@ Object *Object::setIsCheckCollision(bool b) {
     return this;
 }
 
-Object *Object::setScale(int s) {
+Object *Object::setScale(double s) {
     BaseObject::setScale(s);
     this->collision->setScale(s);
     this->mesh->setScale(s);
@@ -564,7 +564,8 @@ void Actor::draw() {
         this->collision->check();
 }
 
-Actor *Actor::setScale(int s) {
+Actor *Actor::setScale(double s) {
+//    this->offsetPosition(0, (this->getHeight() - this->getHeight() * s));
     Object::setScale(s);
     this->animationStateMachine.setScale(s);
     return this;

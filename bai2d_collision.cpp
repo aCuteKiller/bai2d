@@ -48,11 +48,11 @@ RectangleCollision *RectangleCollision::setHeight(int h) {
 }
 
 int RectangleCollision::getWidth() const {
-    return this->width * this->getScale();
+    return int(this->width * this->getScale());
 }
 
 int RectangleCollision::getHeight() const {
-    return this->height * this->getScale();
+    return int(this->height * this->getScale());
 }
 
 void RectangleCollision::check() {
@@ -108,14 +108,14 @@ Mesh &CollisionAble::getMesh() const {
     return *mesh;
 }
 
-CollisionAble *CollisionAble::setScale(int s) {
+CollisionAble *CollisionAble::setScale(double s) {
     assert(s > 0);
     this->scale = s;
     this->mesh->setScale(s);
     return this;
 }
 
-int CollisionAble::getScale() const {
+double CollisionAble::getScale() const {
     return this->scale;
 }
 

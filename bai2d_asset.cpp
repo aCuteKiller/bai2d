@@ -43,14 +43,13 @@ Asset::Asset(const Asset &asset) {
     this->updateTIme = asset.updateTIme;
 }
 
-ImageAsset::ImageAsset(const std::string &name, const std::string &pImgFile, int nWidth, int nHeight, bool bResize)
+ImageAsset::ImageAsset(const std::string &name, const std::string &pImgFile, int nWidth, int nHeight)
         : Asset(name) {
     this->nHeight = nHeight;
     this->nWidth = nWidth;
-    this->bResize = bResize;
     this->pImgFile = pImgFile;
     this->image = new IMAGE();
-    loadimage(this->image, pImgFile.c_str(), nWidth, nHeight, bResize);
+    loadimage(this->image, pImgFile.c_str(), nWidth, nHeight, false);
 }
 
 int ImageAsset::getWidth() const {
@@ -74,8 +73,7 @@ IMAGE *ImageAsset::getImage() const {
 ImageAsset *ImageAsset::resizeImage(int w, int h) {
     this->nHeight = w;
     this->nWidth = h;
-    std::cout << pImgFile << std::endl;
-    loadimage(this->image, this->pImgFile.c_str(), w, h, bResize);
+    loadimage(this->image, this->pImgFile.c_str(), w, h, true);
     return this;
 }
 
@@ -154,9 +152,8 @@ GlobalAssetManager &GlobalAssetManager::getInstance() {
 
 GlobalAssetManager *GlobalAssetManager::instance = nullptr;
 
-void GlobalAssetManager::registeredImageAsset(const std::string &name, std::string pImgFile, int nWidth, int nHeight,
-                                              bool bResize) {
-    this->assetManager.addAsset(new ImageAsset(name, pImgFile, nWidth, nHeight, bResize));
+void GlobalAssetManager::registeredImageAsset(const std::string &name, const std::string& pImgFile, int nWidth, int nHeight) {
+    this->assetManager.addAsset(new ImageAsset(name, pImgFile, nWidth, nHeight));
 }
 
 ImageAsset &GlobalAssetManager::getImageAsset(const std::string &name) {

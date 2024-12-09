@@ -60,11 +60,28 @@ public:
         return targetImg;
     }
 
+    static IMAGE scaleImage(IMAGE &originImg, double scale) {
+        if (scale == 1)return originImg;
+        IMAGE targetImg(int(originImg.getwidth() * scale), int(originImg.getheight() * scale));
+        DWORD *originBuffer = GetImageBuffer(&originImg);
+        DWORD *targetBuffer = GetImageBuffer(&targetImg);
+        // 将原图像像素绘制到目标图像对应放大后的坐标位置
+        for (int i = 0; i < targetImg.getheight(); i++) {
+            for (int j = 0; j < targetImg.getwidth(); j++) {
+                targetBuffer[i * targetImg.getwidth() + j] = originBuffer[
+                        (int) (i / scale) * originImg.getwidth() + (int) (j / scale)];
+            }
+        }
+        return targetImg;
+    }
+
     static void
     putImageAlpha(POINT position, int dw, int dh, IMAGE &originImg, bool isMirrorX = false, bool isMirrorY = false) {
+        std::cout << double(dw) / originImg.getwidth() << std::endl;
         IMAGE imgTemp(originImg);
         if (isMirrorX) imgTemp = mirrorX(originImg);
         if (isMirrorY) imgTemp = mirrorY(imgTemp);
+        imgTemp = scaleImage(imgTemp, double(dw) / originImg.getwidth());
         IMAGE maskImg;
         DWORD *d1;
         maskImg = imgTemp;

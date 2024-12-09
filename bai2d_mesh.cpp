@@ -52,7 +52,7 @@ void Mesh::show() {
     this->afterDraw();
 }
 
-Mesh *Mesh::setScale(int s) {
+Mesh *Mesh::setScale(double s) {
     assert(s > 0);
     this->scale = s;
     return this;
@@ -93,11 +93,11 @@ RectMesh *RectMesh::setHeight(int h) {
 }
 
 int RectMesh::getHeight() const {
-    return this->height * this->scale;
+    return int(this->height * this->scale);
 }
 
 int RectMesh::getWidth() const {
-    return this->width * this->scale;
+    return int(this->width * this->scale);
 }
 
 RectMesh::RectMesh(const POINT &position, int width, int height) : GeometryMesh(position), width(width),
@@ -140,7 +140,7 @@ CircleMesh *CircleMesh::setRadius(int r) {
 }
 
 int CircleMesh::getRadius() const {
-    return this->radius * this->scale;
+    return int(this->radius * this->scale);
 }
 
 void CircleMesh::draw() {
@@ -249,7 +249,7 @@ AnimationStateMachine *AnimationStateMachine::resetPlayPace() {
     return this;
 }
 
-AnimationStateMachine *AnimationStateMachine::setScale(int s) {
+AnimationStateMachine *AnimationStateMachine::setScale(double s) {
     for (auto &[state, animation]: this->animations) {
         animation->getMesh().setScale(s);
     }
@@ -312,11 +312,11 @@ BaseImageMesh *BaseImageMesh::setHeight(int h) {
 }
 
 int BaseImageMesh::getWidth() const {
-    return this->width * scale;
+    return int(this->width * scale);
 }
 
 int BaseImageMesh::getHeight() const {
-    return this->height * scale;
+    return int(this->height * scale);
 }
 
 void ImageMesh::draw() {
@@ -326,14 +326,14 @@ void ImageMesh::draw() {
     EasyXUtils::putImageAlpha(position, getWidth(), getHeight(), tempImg, isMirrorX(), isMirrorY());
 }
 
-ImageMesh *ImageMesh::setScale(int s) {
-    Mesh::setScale(s);
-    if (s != this->lastScale) {
-        this->asset->resizeImage(this->getWidth(), this->getHeight());
-        this->lastScale = s;
-    }
-    return this;
-}
+//ImageMesh *ImageMesh::setScale(int s) {
+//    Mesh::setScale(s);
+//    if (s != this->lastScale) {
+//        this->asset->resizeImage(this->getWidth(), this->getHeight());
+//        this->lastScale = s;
+//    }
+//    return this;
+//}
 
 MultiImageMesh::MultiImageMesh(int width, int height) : BaseImageMesh(width, height), ReversePlayAble(),
                                                         currentIndex(0), playInterval(0), isLoop(false), lastTime(0) {
@@ -404,17 +404,17 @@ void MultiImageMesh::backwardPlay() {
             this->resetCurrentIndex();
     }
 }
-
-MultiImageMesh *MultiImageMesh::setScale(int s) {
-    Mesh::setScale(s);
-    if (s != this->lastScale) {
-        for (Asset *asset: this->assetManager) {
-            dynamic_cast<ImageAsset *>(asset)->resizeImage(this->getWidth(), getHeight());
-        }
-        this->lastScale = s;
-    }
-    return this;
-}
+//
+//MultiImageMesh *MultiImageMesh::setScale(int s) {
+//    Mesh::setScale(s);
+//    if (s != this->lastScale) {
+//        for (Asset *asset: this->assetManager) {
+//            dynamic_cast<ImageAsset *>(asset)->resizeImage(this->getWidth(), getHeight());
+//        }
+//        this->lastScale = s;
+//    }
+//    return this;
+//}
 
 MultiImageMesh::~MultiImageMesh() = default;
 

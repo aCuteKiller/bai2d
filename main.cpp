@@ -71,6 +71,14 @@ public:
     void dying() {
         this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::DYING));
     }
+
+    bai::slot scale(const SlotArgs &args) {
+        this->setScale(this->getScale() + 0.1);
+    }
+
+    bai::slot shrink(const SlotArgs &args) {
+        this->setScale(this->getScale() - 0.1);
+    }
 };
 
 TestObj testObj1, testObj2, testObj3;
@@ -141,15 +149,15 @@ int main() {
 //    globalInputEventManager.connect(KEY_S, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveDown));
     globalInputEventManager.connect(KEY_A, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveLeft));
     globalInputEventManager.connect(KEY_D, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveRight));
-    globalInputEventManager.connect(KEY_Q, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::dying));
+    globalInputEventManager.connect(KEY_V, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::dying));
     globalInputEventManager.connect(KEY_SPACE, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::jump));
+    globalInputEventManager.connect(KEY_E, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::scale));
+    globalInputEventManager.connect(KEY_Q, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::shrink));
 
 //    globalInputEventManager.connect(KEY_W, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
 //    globalInputEventManager.connect(KEY_S, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
     globalInputEventManager.connect(KEY_A, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorX));
     globalInputEventManager.connect(KEY_D, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorX));
-
-    testObj1.setScale(2);
 
     const std::future<void> &future = globalInputEventManager.runInputEventLoop();
     mainLoop();

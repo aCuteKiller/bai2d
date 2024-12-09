@@ -14,7 +14,7 @@ enum class CollisionCategory {
 
 class CollisionAble {
 private:
-    int scale = 1;
+    double scale = 1;
 protected:
     POINT position{};
     CollisionCategory category;
@@ -55,9 +55,9 @@ public:
         }
     }
 
-    CollisionAble *setScale(int s);
+    CollisionAble *setScale(double s);
 
-    [[nodiscard]] int getScale() const;
+    [[nodiscard]] double getScale() const;
 
 };
 

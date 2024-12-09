@@ -55,14 +55,12 @@ protected:
     std::string pImgFile;
     int nWidth;
     int nHeight;
-    bool bResize;
     std::string filePath;
 public:
     explicit ImageAsset(const std::string &name,
-                        const std::string& pImgFile,
+                        const std::string &pImgFile,
                         int nWidth = 0,
-                        int nHeight = 0,
-                        bool bResize = false);
+                        int nHeight = 0);
 
     ~ImageAsset() override;
 
@@ -117,10 +115,9 @@ public:
     static GlobalAssetManager &getInstance();
 
     void registeredImageAsset(const std::string &name,
-                              std::string pImgFile,
+                              const std::string& pImgFile,
                               int nWidth = 0,
-                              int nHeight = 0,
-                              bool bResize = false);
+                              int nHeight = 0);
 
     ImageAsset &getImageAsset(const std::string &name);
 };

@@ -18,7 +18,6 @@ getMultiImageMesh(const std::string &dirName, const std::string &fileNamePrefix,
         std::string name = fileNamePrefix;
         name += StrUtils::numToStrFillZero(i, 3) += ".png";
         path += name;
-        std::cout << path << std::endl;
         GlobalAssetManager::getInstance().registeredImageAsset(name, path, width, height);
         pMesh->addAsset(name);
     }
