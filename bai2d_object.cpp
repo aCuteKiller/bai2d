@@ -20,8 +20,8 @@ Object::Object(const POINT &position, RectMesh *mesh, CollisionAble *collision) 
 }
 
 void Object::draw() {
-    if (!this->getIsVisible()) return;
-    this->mesh->show();
+    if (this->getIsVisible())
+        this->mesh->show();
     if (this->isCheckCollision)
         this->collision->check();
 }
@@ -223,6 +223,13 @@ std::vector<BaseObject *> BaseObjectManager::getAllInOneVectorWithSortAndUnique(
     return v;
 }
 
+void BaseObjectManager::updateAll() {
+    auto objs = getAllInOneVectorWithSortAndUnique();
+    for (auto iterator: objs) {
+        iterator->update();
+    }
+}
+
 BaseObject *BaseObject::attach(BaseObject *obj) {
     if (obj != nullptr && !this->attachObjs->isContains(obj)) {
         if (obj->parentObj != nullptr) {
@@ -289,11 +296,11 @@ BaseObject *BaseObject::setHeight(int h) {
 }
 
 int BaseObject::getWidth() const {
-    return width * this->getScale();
+    return int(width * this->getScale());
 }
 
 int BaseObject::getHeight() const {
-    return height * this->getScale();
+    return int(height * this->getScale());
 }
 
 BaseObject::BaseObject(const POINT &position, int w, int h) : visible(true), rotateAngle(0), renderingIndex(0) {
@@ -341,6 +348,12 @@ BaseObject *BaseObject::setScale(double s) {
 
 double BaseObject::getScale() const {
     return this->scale;
+}
+
+BaseObject *BaseObject::offsetPosition(POINT offset) {
+    this->position.x += offset.x;
+    this->position.y += offset.y;
+    return this;
 }
 
 void Pawn::updateAction() {
@@ -411,7 +424,7 @@ Pawn::Pawn() : Actor() {
     this->startInTheAir = 0;
 }
 
-const int Pawn::DEFAULT_JUMP_HEIGHT = 50;
+const int Pawn::DEFAULT_JUMP_HEIGHT = 30;
 const int Pawn::DEFAULT_JUMP_SPEED = 5;
 const int Pawn::DEFAULT_IN_THE_AIR_TIME = 300;
 
@@ -539,6 +552,10 @@ Object *Object::setScale(double s) {
     return this;
 }
 
+Object::Object(int w, int h) : Object(POINT{0, 0}, w, h, nullptr, nullptr) {
+
+}
+
 void Weight::draw() {
 
 }
@@ -556,16 +573,15 @@ Actor *Actor::update() {
 }
 
 void Actor::draw() {
-    if (!this->getIsVisible()) return;
-    if (this->animationStateMachine.getCurrentAnimation()) {
-        this->animationStateMachine.getCurrentAnimation()->getMesh().show();
-    }
+    if (this->getIsVisible())
+        if (this->animationStateMachine.getCurrentAnimation()) {
+            this->animationStateMachine.getCurrentAnimation()->getMesh().show();
+        }
     if (this->isCheckCollision)
         this->collision->check();
 }
 
 Actor *Actor::setScale(double s) {
-//    this->offsetPosition(0, (this->getHeight() - this->getHeight() * s));
     Object::setScale(s);
     this->animationStateMachine.setScale(s);
     return this;

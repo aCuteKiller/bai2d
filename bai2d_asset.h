@@ -115,7 +115,7 @@ public:
     static GlobalAssetManager &getInstance();
 
     void registeredImageAsset(const std::string &name,
-                              const std::string& pImgFile,
+                              const std::string &pImgFile,
                               int nWidth = 0,
                               int nHeight = 0);
 

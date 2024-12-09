@@ -20,6 +20,8 @@ add_executable(bai2d main.cpp
         bai2d_collision.cpp
         bai2d_collision.h
         bai2d_shortcut_func.h
+        bai2d_scene.cpp
+        bai2d_scene.h
 )
 
 set(EasyX_INC "${CMAKE_SOURCE_DIR}/EasyX/include")

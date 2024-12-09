@@ -3,6 +3,10 @@
 #include "bai2d_registered_input.h"
 #include "bai2d_object.h"
 #include "bai2d_shortcut_func.h"
+#include "bai2d_scene.h"
+
+// TODO->垃圾回收、任务机制、物理
+Scene scene(640, 480);
 
 void mainLoop();
 
@@ -19,6 +23,7 @@ enum struct TestObjectStateEnum : byte {
 
 class TestObj : public Pawn {
 private:
+    long long lastMoveTime = 0;
 public:
     bai::slot resetVectorX(const SlotArgs &args) override {
         if (!(KEY_A.isPressing() || KEY_D.isPressing()))
@@ -79,15 +84,43 @@ public:
     bai::slot shrink(const SlotArgs &args) {
         this->setScale(this->getScale() - 0.1);
     }
+
+    bai::slot attachCamera(const SlotArgs &args) {
+        if (scene.getCamera().getParentObj()) {
+            this->detach(&scene.getCamera());
+        } else {
+            this->attach(&scene.getCamera());
+        }
+    }
+
+    bai::slot cameraMoveToMouse(const SlotArgs &args) {
+        if (!scene.getCamera().getParentObj()) {
+            lastMoveTime = TimeUtils::getNowMilliseconds();
+            InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
+            scene.getCamera().moveToTargetPosition(inputInfo->clickPosition);
+        }
+    }
+
+    bai::slot cameraOffsetRefViewCenter(const SlotArgs &args) {
+        if (!scene.getCamera().getParentObj()) {
+            lastMoveTime = TimeUtils::getNowMilliseconds();
+            InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
+            scene.getCamera().offsetRefViewCenter(inputInfo->clickPosition, 5);
+        }
+    }
 };
 
 TestObj testObj1, testObj2, testObj3;
-BaseObjectManager objectManager;
 
 int main() {
     // 设置控制台输出代码页为UTF-8
     SetConsoleOutputCP(CP_UTF8);
-
+//    scene.getCamera().setPosition(320, 240);
+    scene.getCamera().setRenderSelf(true);
+    testObj1.attach(&scene.getCamera());
+    auto *pObject1 = new Object();
+    pObject1->setMesh(new CircleMesh(90))->getMesh().castTo<GeometryMesh>()->setColor(RED);
+//    testObj1.attach(pObject1);
     initgraph(640, 480);
 
     GlobalInputEventManager &globalInputEventManager = GlobalInputEventManager::getInstance();
@@ -101,6 +134,10 @@ int main() {
     testObj2.setPosition(100, 100);
 //    testObj3.setRotateAngle(30);
 //    testObj1.setRotateAngle(45);
+    auto *pObject = new Object(600, 100);
+    pObject->setPosition(320, 240);
+    pObject->getMesh().castTo<GeometryMesh>()->setColor(RED);
+    scene.addObject(pObject);
 
     setbkcolor(WHITE);
 
@@ -132,13 +169,13 @@ int main() {
     testObj1.setMaxJumpTimes(2);
 
     testObj2.setAnchor(ObjectAnchor::RIGHT_BOTTOM);
-    testObj1.setPosition(400, 400);
+    testObj1.setPosition(320, 240);
     testObj2.setMesh(new CircleMesh(50));
     testObj2.getMesh().castTo<GeometryMesh>()->setColor(BLACK);
     testObj2.getMesh().castTo<GeometryMesh>()->setColor(BLACK);
     dynamic_cast<GeometryMesh &> (testObj2.getMesh()).setFill(true);
-    objectManager.addObject(&testObj1);
-    objectManager.addObject(&testObj3);
+    scene.addObject(&testObj1);
+//    scene.addObject(&testObj3);
 
     testObj1.setSpeed(3);
 //    testObj1.setRotateAngle(45);
@@ -153,6 +190,11 @@ int main() {
     globalInputEventManager.connect(KEY_SPACE, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::jump));
     globalInputEventManager.connect(KEY_E, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::scale));
     globalInputEventManager.connect(KEY_Q, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::shrink));
+    globalInputEventManager.connect(KEY_F, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::attachCamera));
+    globalInputEventManager.connect(MOUSE_LEFT, SIGNAL(&MouseInput::click), testObj1,
+                                    SLOT(&TestObj::cameraMoveToMouse));
+    globalInputEventManager.connect(MOUSE_MOVING, SIGNAL(&MouseInput::moving), testObj1,
+                                    SLOT(&TestObj::cameraOffsetRefViewCenter));
 
 //    globalInputEventManager.connect(KEY_W, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
 //    globalInputEventManager.connect(KEY_S, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
@@ -161,7 +203,6 @@ int main() {
 
     const std::future<void> &future = globalInputEventManager.runInputEventLoop();
     mainLoop();
-
     closegraph();
     return 0;
 }
@@ -193,7 +234,7 @@ void mainLoopFrameHandle() {
     BeginBatchDraw();
     cleardevice();
 
-    objectManager.showAll();
+    scene.render();
 
     const TCHAR *text;
     text = ("FPS: " + std::to_string(REAL_RENDERING_FPS)).c_str();

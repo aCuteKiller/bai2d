@@ -78,7 +78,8 @@ public:
     [[nodiscard]] int getRotateAngle() const;
 
     template<class T>
-    T *castTo() {
+    typename std::enable_if<std::is_base_of<Mesh, T>::value, T>::type *
+    castTo() {
         try {
             return dynamic_cast<T *>(this);
         } catch (std::bad_cast &e) {
@@ -89,16 +90,24 @@ public:
 
     virtual Mesh *setScale(double s);
 
+    Mesh *offsetPosition(int x, int y);
+
+    Mesh *offsetPosition(POINT offset);
+
 };
 
 class GeometryMesh : public Mesh {
 private:
     bool fill;
     COLORREF color, tempColor;
-public:
-    explicit GeometryMesh() : GeometryMesh(POINT{}) {};
+    int lineStyle;
+    int lineThickness;
+    LINESTYLE lastLineStyle;
 
-    explicit GeometryMesh(const POINT &position) : fill(false), color(WHITE), tempColor(color), Mesh(position) {};
+public:
+    explicit GeometryMesh();;
+
+    explicit GeometryMesh(const POINT &position);;
 
     GeometryMesh *setFill(bool b);
 
@@ -109,6 +118,11 @@ public:
     void beforeDraw() override;
 
     void afterDraw() override;
+
+    GeometryMesh *setLineStyle(int style);
+
+    GeometryMesh *setLineThickness(int thickness);
+
 };
 
 class RectMesh : public GeometryMesh {
@@ -265,6 +279,8 @@ public:
     AnimationStateMachine *setAllRotateAngle(int angle);
 
     AnimationStateMachine *updateAll(const POINT &point, int angle);
+
+    AnimationStateMachine *offsetAllPosition(const POINT &offset);
 
     AnimationStateMachine *setScale(double s);
 

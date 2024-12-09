@@ -27,9 +27,24 @@ class EventAble;
  * - [列出主要功能点 2]
  */
 class SlotArgs {
+private:
+public:
+    virtual ~SlotArgs() = default;
+
+    template<class T>
+    typename std::enable_if<std::is_base_of<SlotArgs, T>::value, T>::type *
+    castTo() {
+        try {
+            return dynamic_cast<T *>(this);
+        } catch (std::bad_cast &e) {
+            std::cout << "error: " << e.what() << std::endl;
+            throw std::runtime_error(e.what());
+        }
+    }
 };
 
-struct InputInfo : public SlotArgs {
+class InputInfo : public SlotArgs {
+public:
     POINT clickPosition;
 
     // 添加构造函数并初始化 clickPosition
@@ -128,7 +143,7 @@ public:
 
     void removeEvent(EventAble &sender, Signal signal_);
 
-    void notify(const EventAble &sender, Signal signal_,const SlotArgs &slotArgs);
+    void notify(const EventAble &sender, Signal signal_, const SlotArgs &slotArgs);
 
 };
 

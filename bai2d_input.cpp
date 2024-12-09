@@ -100,6 +100,18 @@ UCHAR MouseInput::getScrollState() const {
     return this->scrollState;
 }
 
+bai::signal MouseInput::moving() {
+
+}
+
+bool MouseInput::getIsMoving() const {
+    return this->isMoving;
+}
+
+void MouseInput::setIsMoving(bool moving) {
+    this->isMoving = moving;
+}
+
 InputManager::InputManager() {
     this->inputs = std::vector<InputBase *>();
 }
@@ -166,6 +178,7 @@ void InputManager::updateFalseToNoActive() {
             if (input->getCategoryCode() == InputCategory::MOUSE) {
                 auto *pInput = (MouseInput *) input;
                 pInput->updateScrollState(false);
+                pInput->setIsMoving(false);
             }
         }
     }
@@ -189,6 +202,16 @@ void InputManager::updateMouseScrollInput(UCHAR scrollState) {
         if (input->getCategoryCode() == InputCategory::MOUSE) {
             auto *mouseInput = (MouseInput *) (input);
             mouseInput->updateScrollState(scrollState);
+            mouseInput->setIsActive(true);
+        }
+    }
+}
+
+void InputManager::updateMouseMovingState(bool state) {
+    for (InputBase *input: this->inputs) {
+        if (input->getCategoryCode() == InputCategory::MOUSE) {
+            auto *mouseInput = (MouseInput *) (input);
+            mouseInput->setIsMoving(state);
             mouseInput->setIsActive(true);
         }
     }
@@ -300,6 +323,9 @@ InputInfo GlobalInputEventManager::updateInputState() {
                     this->inputManager.updateMouseScrollInput(MouseInput::SCROLL_DOWN_STATE);
                 }
                 break;
+            case WM_MOUSEMOVE:
+                this->inputManager.updateMouseMovingState(true);
+                break;
         }
     }
     // 如果没有更新，且上一帧是按下和持续按下，则进true；
@@ -333,8 +359,23 @@ void GlobalInputEventManager::updateInputLogic(const InputInfo &inputInfo) {
                 this->notify(*pMouseInput, SIGNAL(&MouseInput::wheelScrollUp), args);
             } else if (pMouseInput->isScrollDown())
                 this->notify(*pMouseInput, SIGNAL(&MouseInput::wheelScrollDown), args);
+            if (pMouseInput->getIsMoving())
+                this->notify(*pMouseInput, SIGNAL(&MouseInput::moving), args);
         }
     }
 }
 
 GlobalInputEventManager GlobalInputEventManager::instance;
+
+void InputRegistrationTable::registerKey(int alias, byte keyCode) {
+    inputTable[alias] = &REGISTERED_KEY(keyCode);
+}
+
+void InputRegistrationTable::registerMouse(int alias, byte keyCode) {
+    inputTable[alias] = &REGISTERED_MOUSE(keyCode);
+}
+
+template<class T>
+typename std::enable_if<std::is_base_of<InputBase, T>::value, T>::type *InputRegistrationTable::getInput(int alias) {
+    return dynamic_cast<T *>(inputTable[alias]);
+}

@@ -58,6 +58,18 @@ Mesh *Mesh::setScale(double s) {
     return this;
 }
 
+Mesh *Mesh::offsetPosition(int x, int y) {
+    this->position.x += x;
+    this->position.y += y;
+    return this;
+}
+
+Mesh *Mesh::offsetPosition(POINT offset) {
+    this->position.x += offset.x;
+    this->position.y += offset.y;
+    return this;
+}
+
 void RectMesh::draw() {
     // 计算所有旋转后的上下左右点
     POINT pts[5];
@@ -121,13 +133,35 @@ GeometryMesh *GeometryMesh::setColor(COLORREF c) {
 
 void GeometryMesh::beforeDraw() {
     this->tempColor = getlinecolor();
-    setlinecolor(this->color);
+    getlinestyle(&this->lastLineStyle);
+    setlinestyle(this->lineStyle, this->lineThickness);
     setfillcolor(this->color);
+    setlinecolor(this->color);
 }
 
 void GeometryMesh::afterDraw() {
-    setlinecolor(this->tempColor);
     setfillcolor(this->tempColor);
+    setlinecolor(this->tempColor);
+    setlinestyle(&this->lastLineStyle);
+}
+
+GeometryMesh::GeometryMesh(const POINT &position) : fill(false), color(WHITE), tempColor(color), Mesh(position) {
+    this->lineStyle = PS_SOLID;
+    this->lineThickness = 1;
+    this->lastLineStyle = {};
+}
+
+GeometryMesh::GeometryMesh() : GeometryMesh(POINT{}) {}
+
+GeometryMesh *GeometryMesh::setLineStyle(int style) {
+    this->lineStyle = style;
+    return this;
+}
+
+GeometryMesh *GeometryMesh::setLineThickness(int thickness) {
+    assert(thickness > 0);
+    this->lineThickness = thickness;
+    return this;
 }
 
 CircleMesh::CircleMesh(const POINT &position, int radius) : GeometryMesh(position), radius(radius) {
@@ -252,6 +286,13 @@ AnimationStateMachine *AnimationStateMachine::resetPlayPace() {
 AnimationStateMachine *AnimationStateMachine::setScale(double s) {
     for (auto &[state, animation]: this->animations) {
         animation->getMesh().setScale(s);
+    }
+    return this;
+}
+
+AnimationStateMachine *AnimationStateMachine::offsetAllPosition(const POINT &offset) {
+    for (auto &[state, animation]: this->animations) {
+        animation->getMesh().offsetPosition(offset);
     }
     return this;
 }

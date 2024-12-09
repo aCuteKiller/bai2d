@@ -28,6 +28,7 @@ enum class MouseButtonEnum : byte {
     LEFT = 1,
     MIDDLE = 2,
     RIGHT = 3,
+    MOVING = 4
 };
 static std::map<USHORT, MouseButtonEnum> MOUSE_BUTTON_V_CODE_TABLE({
                                                                            {WM_LBUTTONUP,   MouseButtonEnum::LEFT},
@@ -109,17 +110,20 @@ public:
 class MouseInput : public InputBase {
 private:
     UCHAR scrollState;
+    bool isMoving;
 public:
     static UCHAR SCROLL_UP_STATE;
     static UCHAR SCROLL_DOWN_STATE;
 
-    explicit MouseInput(byte code) : InputBase(code, InputCategory::MOUSE), scrollState(false) {}
+    explicit MouseInput(byte code) : InputBase(code, InputCategory::MOUSE), scrollState(false), isMoving(false) {}
 
     bai::signal click();
 
     bai::signal wheelScrollUp();
 
     bai::signal wheelScrollDown();
+
+    bai::signal moving();
 
     [[nodiscard]] bool isScrollUp() const;
 
@@ -128,6 +132,10 @@ public:
     void updateScrollState(UCHAR state);
 
     [[nodiscard]] UCHAR getScrollState() const;
+
+    [[nodiscard]] bool getIsMoving() const;
+
+    void setIsMoving(bool moving);
 };
 
 
@@ -165,6 +173,8 @@ public:
     void updateMouseScrollInput(UCHAR scrollState);
 
     void updateTrueToPress();
+
+    void updateMouseMovingState(bool state);
 };
 
 
@@ -185,10 +195,27 @@ private:
 
     void updateCode(InputCategory category, byte vCode, bool state);
 
+
 public:
     static GlobalInputEventManager &getInstance();
 
     std::future<void> runInputEventLoop();
+};
+
+class InputRegistrationTable {
+private:
+    std::map<int, InputBase *> inputTable;
+
+    InputRegistrationTable() = default;
+
+public:
+    void registerKey(int alias, byte keyCode);
+
+    void registerMouse(int alias, byte keyCode);
+
+    template<class T>
+    typename std::enable_if<std::is_base_of<InputBase, T>::value, T>::type *
+    getInput(int alias);
 };
 
 #endif // BAI2D_INPUT_H

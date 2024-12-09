@@ -70,11 +70,13 @@ public:
 
     [[nodiscard]] int getRenderingIndex() const;
 
-    BaseObject *setPosition(const POINT &point);
+    virtual BaseObject *setPosition(const POINT &point);
 
-    BaseObject *setPosition(int x, int y);
+    virtual BaseObject *setPosition(int x, int y);
 
     BaseObject *offsetPosition(int x, int y);
+
+    BaseObject *offsetPosition(POINT offset);
 
     virtual BaseObject *update();
 
@@ -116,6 +118,16 @@ public:
 
     [[nodiscard]] double getScale() const;
 
+    template<class T>
+    typename std::enable_if<std::is_base_of<BaseObject, T>::value, T>::type *
+    castTo() {
+        try {
+            return dynamic_cast<T *>(this);
+        } catch (std::bad_cast &e) {
+            std::cout << "error: " << e.what() << std::endl;
+            throw std::runtime_error(e.what());
+        }
+    }
 };
 
 class Object : public BaseObject {
@@ -131,6 +143,8 @@ public:
     ~Object() override;
 
     explicit Object(const POINT &position);
+
+    explicit Object(int w, int h);
 
     explicit Object(const POINT &position, RectMesh *mesh);
 
@@ -155,6 +169,7 @@ public:
     Object *setIsCheckCollision(bool b);
 
     Object *setScale(double s) override;
+
 };
 
 class Actor : public Object {
@@ -283,6 +298,8 @@ public:
     void removeAll();
 
     void showAll();
+
+    void updateAll();
 
     // 添加 begin() 和 end() 成员函数
     std::vector<BaseObject *>::iterator begin() {

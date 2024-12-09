@@ -77,7 +77,6 @@ public:
 
     static void
     putImageAlpha(POINT position, int dw, int dh, IMAGE &originImg, bool isMirrorX = false, bool isMirrorY = false) {
-        std::cout << double(dw) / originImg.getwidth() << std::endl;
         IMAGE imgTemp(originImg);
         if (isMirrorX) imgTemp = mirrorX(originImg);
         if (isMirrorY) imgTemp = mirrorY(imgTemp);

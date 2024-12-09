@@ -16,6 +16,7 @@ static KeyInput &KEY_S = REGISTERED_KEY('S');
 static KeyInput &KEY_D = REGISTERED_KEY('D');
 static KeyInput &KEY_E = REGISTERED_KEY('E');
 static KeyInput &KEY_Q = REGISTERED_KEY('Q');
+static KeyInput &KEY_F = REGISTERED_KEY('F');
 static KeyInput &KEY_B = REGISTERED_KEY('B');
 static KeyInput &KEY_V = REGISTERED_KEY('V');
 static KeyInput &KEY_C = REGISTERED_KEY('C');
@@ -30,5 +31,6 @@ static MouseInput &MOUSE_LEFT = REGISTERED_MOUSE(MouseButtonEnum::LEFT);
 static MouseInput &MOUSE_RIGHT = REGISTERED_MOUSE(MouseButtonEnum::RIGHT);
 static MouseInput &MOUSE_MIDDLE = REGISTERED_MOUSE(MouseButtonEnum::MIDDLE);
 static MouseInput &MOUSE_SCROLL = REGISTERED_MOUSE(MouseButtonEnum::MIDDLE);
+static MouseInput &MOUSE_MOVING = REGISTERED_MOUSE(MouseButtonEnum::MOVING);
 
 #endif //BAI2D_REGISTERED_INPUT_H

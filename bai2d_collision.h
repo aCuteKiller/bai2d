@@ -46,7 +46,8 @@ public:
     [[nodiscard]] Mesh &getMesh() const;
 
     template<class T>
-    T *castTo() {
+    typename std::enable_if<std::is_base_of<CollisionAble, T>::value, T>::type *
+    castTo() {
         try {
             return (T *) (this);
         } catch (std::bad_cast &e) {
