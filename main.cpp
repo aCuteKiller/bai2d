@@ -6,7 +6,9 @@
 #include "bai2d_scene.h"
 
 // TODO->垃圾回收、任务机制、物理
-Scene scene(640, 480);
+#define WINDOW_WIDTH 1024
+#define WINDOW_HEIGHT 640
+Scene scene(WINDOW_WIDTH, WINDOW_HEIGHT);
 
 void mainLoop();
 
@@ -23,7 +25,6 @@ enum struct TestObjectStateEnum : byte {
 
 class TestObj : public Pawn {
 private:
-    long long lastMoveTime = 0;
 public:
     bai::slot resetVectorX(const SlotArgs &args) override {
         if (!(KEY_A.isPressing() || KEY_D.isPressing()))
@@ -95,17 +96,22 @@ public:
 
     bai::slot cameraMoveToMouse(const SlotArgs &args) {
         if (!scene.getCamera().getParentObj()) {
-            lastMoveTime = TimeUtils::getNowMilliseconds();
             InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
             scene.getCamera().moveToTargetPosition(inputInfo->clickPosition);
         }
     }
 
     bai::slot cameraOffsetRefViewCenter(const SlotArgs &args) {
-        if (!scene.getCamera().getParentObj()) {
-            lastMoveTime = TimeUtils::getNowMilliseconds();
+        if (!scene.getCamera().getParentObj() && MOUSE_MIDDLE.isPressing()) {
             InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
-            scene.getCamera().offsetRefViewCenter(inputInfo->clickPosition, 5);
+            scene.getCamera().offsetRefViewCenter(inputInfo->clickPosition);
+        }
+    }
+
+    bai::slot test(const SlotArgs &args) {
+        if (!scene.getCamera().getParentObj() && MOUSE_MIDDLE.isPressing()) {
+            InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
+            scene.getCamera().offsetRefViewCenter(inputInfo->clickPosition);
         }
     }
 };
@@ -121,7 +127,7 @@ int main() {
     auto *pObject1 = new Object();
     pObject1->setMesh(new CircleMesh(90))->getMesh().castTo<GeometryMesh>()->setColor(RED);
 //    testObj1.attach(pObject1);
-    initgraph(640, 480);
+    initgraph(WINDOW_WIDTH, WINDOW_HEIGHT);
 
     GlobalInputEventManager &globalInputEventManager = GlobalInputEventManager::getInstance();
 
@@ -195,6 +201,8 @@ int main() {
                                     SLOT(&TestObj::cameraMoveToMouse));
     globalInputEventManager.connect(MOUSE_MOVING, SIGNAL(&MouseInput::moving), testObj1,
                                     SLOT(&TestObj::cameraOffsetRefViewCenter));
+    globalInputEventManager.connect(MOUSE_MOVING, SIGNAL(&MouseInput::silence), testObj1,
+                                    SLOT(&TestObj::test));
 
 //    globalInputEventManager.connect(KEY_W, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
 //    globalInputEventManager.connect(KEY_S, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));

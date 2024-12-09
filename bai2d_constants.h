@@ -10,7 +10,7 @@
 #define BAI_ENGINE_NAME "Bai Engine"
 #define BAI_ENGINE_AUTHOR "aCuteKiller"
 #define BAI_ENGINE_COPYRIGHT "Copyright (c) 2024 aCuteKiller"
-#define BAI_ENGINE_FRAME_STD_FPS 60
+#define BAI_ENGINE_FRAME_STD_FPS 120
 #define BAI_ENGINE_STANDARD_FRAME_SPACING (1000 / BAI_ENGINE_FRAME_STD_FPS)
 
 static bool IS_ENGINE_RUNNING = true;

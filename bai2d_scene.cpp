@@ -84,16 +84,19 @@ Camera *Camera::moveToTargetPosition(POINT point) {
     return this;
 }
 
-Camera *Camera::offsetRefViewCenter(POINT &point, int step) {
+Camera *Camera::offsetRefViewCenter(POINT &point, int minSpeed, int maxSpeed, int step) {
+    assert(step <= 500 && step >= 1 && maxSpeed >= minSpeed && minSpeed >= 0 && maxSpeed <= 20);
     if (!this->getParentObj()) {
         // 根据鼠标远近加减速
-        // 将offset过滤成0和1组成的向量
         const POINT &center = getViewCenter();
+        auto dx = float(point.x - center.x);
+        auto dy = float(point.y - center.y);
+        float length = std::sqrt(dx * dx + dy * dy);
+        float speed = std::min(std::max(length / (float) step, (float) minSpeed), (float) maxSpeed);
         POINT towards{point.x - center.x, point.y - center.y};
         double angle = atan2(towards.y, towards.x);
-        int x = towards.x != 0 ? static_cast<int>(round(step * cos(angle))) : 0;
-        int y = towards.y != 0 ? static_cast<int>(round(step * sin(angle))) : 0;
-        std::cout << x << "," << y << std::endl;
+        int x = towards.x != 0 ? static_cast<int>(round(speed * cos(angle))) : 0;
+        int y = towards.y != 0 ? static_cast<int>(round(speed * sin(angle))) : 0;
         offsetPosition(x, y);
     }
     return this;

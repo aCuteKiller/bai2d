@@ -110,12 +110,14 @@ public:
 class MouseInput : public InputBase {
 private:
     UCHAR scrollState;
-    bool isMoving;
+    UCHAR moveState;
 public:
     static UCHAR SCROLL_UP_STATE;
     static UCHAR SCROLL_DOWN_STATE;
+    static UCHAR MOVING_STATE;
+    static UCHAR STATIC_STATE;
 
-    explicit MouseInput(byte code) : InputBase(code, InputCategory::MOUSE), scrollState(false), isMoving(false) {}
+    explicit MouseInput(byte code) : InputBase(code, InputCategory::MOUSE), scrollState(false), moveState(false) {}
 
     bai::signal click();
 
@@ -125,6 +127,8 @@ public:
 
     bai::signal moving();
 
+    bai::signal silence();
+
     [[nodiscard]] bool isScrollUp() const;
 
     [[nodiscard]] bool isScrollDown() const;
@@ -133,9 +137,9 @@ public:
 
     [[nodiscard]] UCHAR getScrollState() const;
 
-    [[nodiscard]] bool getIsMoving() const;
+    [[nodiscard]] UCHAR getMoveState() const;
 
-    void setIsMoving(bool moving);
+    void setMoveState(UCHAR state);
 };
 
 
@@ -164,7 +168,7 @@ public:
 
     void updateInput(InputCategory category, byte code, bool state);
 
-    void resetAllIsActive(bool isActive);
+    void setAllIsActive(bool isActive);
 
     void updateFalseToNoActive();
 
@@ -174,7 +178,10 @@ public:
 
     void updateTrueToPress();
 
-    void updateMouseMovingState(bool state);
+    void updateToMouseMoving();
+
+    void updateToMouseStatic();
+
 };
 
 
@@ -182,8 +189,11 @@ class GlobalInputEventManager : public BaseEventManager {
 private:
     static GlobalInputEventManager instance;
     InputManager &inputManager;
+    POINT lastMousePosition;
+    long long lastMoveTime;
 
-    GlobalInputEventManager() : inputManager(InputManager::getInstance()) {};
+    GlobalInputEventManager() : inputManager(InputManager::getInstance()), lastMousePosition({0, 0}),
+                                lastMoveTime(0) {};
 
     void inputEventLoop();
 

@@ -31,7 +31,7 @@ public:
 
     POINT getViewCenter();
 
-    Camera *offsetRefViewCenter(POINT &point, int step);
+    Camera *offsetRefViewCenter(POINT &point, int minSpeed = 0, int maxSpeed = 5, int step = 200);
 };
 
 class Scene {

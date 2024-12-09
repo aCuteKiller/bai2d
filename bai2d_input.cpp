@@ -104,13 +104,20 @@ bai::signal MouseInput::moving() {
 
 }
 
-bool MouseInput::getIsMoving() const {
-    return this->isMoving;
+bai::signal MouseInput::silence() {
+
 }
 
-void MouseInput::setIsMoving(bool moving) {
-    this->isMoving = moving;
+UCHAR MouseInput::getMoveState() const {
+    return this->moveState;
 }
+
+void MouseInput::setMoveState(UCHAR state) {
+    this->moveState = state;
+}
+
+UCHAR MouseInput::MOVING_STATE = 0x01;
+UCHAR MouseInput::STATIC_STATE = 0x02;
 
 InputManager::InputManager() {
     this->inputs = std::vector<InputBase *>();
@@ -165,7 +172,7 @@ InputManager::~InputManager() {
     }
 }
 
-void InputManager::resetAllIsActive(bool isActive) {
+void InputManager::setAllIsActive(bool isActive) {
     for (InputBase *input: this->inputs) {
         input->setIsActive(isActive);
     }
@@ -178,7 +185,7 @@ void InputManager::updateFalseToNoActive() {
             if (input->getCategoryCode() == InputCategory::MOUSE) {
                 auto *pInput = (MouseInput *) input;
                 pInput->updateScrollState(false);
-                pInput->setIsMoving(false);
+                pInput->setMoveState(false);
             }
         }
     }
@@ -207,11 +214,21 @@ void InputManager::updateMouseScrollInput(UCHAR scrollState) {
     }
 }
 
-void InputManager::updateMouseMovingState(bool state) {
+void InputManager::updateToMouseMoving() {
     for (InputBase *input: this->inputs) {
         if (input->getCategoryCode() == InputCategory::MOUSE) {
             auto *mouseInput = (MouseInput *) (input);
-            mouseInput->setIsMoving(state);
+            mouseInput->setMoveState(MouseInput::MOVING_STATE);
+            mouseInput->setIsActive(true);
+        }
+    }
+}
+
+void InputManager::updateToMouseStatic() {
+    for (InputBase *input: this->inputs) {
+        if (input->getCategoryCode() == InputCategory::MOUSE) {
+            auto *mouseInput = (MouseInput *) (input);
+            mouseInput->setMoveState(MouseInput::STATIC_STATE);
             mouseInput->setIsActive(true);
         }
     }
@@ -295,7 +312,7 @@ void GlobalInputEventManager::updateCode(InputCategory category, byte vCode, boo
 
 InputInfo GlobalInputEventManager::updateInputState() {
 // 更新状态
-    inputManager.resetAllIsActive(false);
+    inputManager.setAllIsActive(false);
     ExMessage exMessage{};
     if (peekmessage(&exMessage, EX_MOUSE | EX_KEY)) {
         switch (exMessage.message) {
@@ -310,8 +327,8 @@ InputInfo GlobalInputEventManager::updateInputState() {
             case WM_MBUTTONUP:
                 updateCode(InputCategory::MOUSE, (byte) MOUSE_BUTTON_V_CODE_TABLE[exMessage.message], false);
                 break;
-            case WM_LBUTTONDOWN :
-            case WM_RBUTTONDOWN :
+            case WM_LBUTTONDOWN:
+            case WM_RBUTTONDOWN:
             case WM_MBUTTONDOWN:
                 updateCode(InputCategory::MOUSE, (byte) MOUSE_BUTTON_V_CODE_TABLE[exMessage.message], true);
                 break;
@@ -323,18 +340,22 @@ InputInfo GlobalInputEventManager::updateInputState() {
                     this->inputManager.updateMouseScrollInput(MouseInput::SCROLL_DOWN_STATE);
                 }
                 break;
-            case WM_MOUSEMOVE:
-                this->inputManager.updateMouseMovingState(true);
-                break;
         }
+        if (lastMousePosition.x != exMessage.x || lastMousePosition.y != exMessage.y) {
+            this->inputManager.updateToMouseMoving();
+            lastMousePosition = POINT{exMessage.x, exMessage.y};
+            this->lastMoveTime = TimeUtils::getNowMilliseconds();
+        }
+    }
+    if (TimeUtils::getNowMilliseconds() - this->lastMoveTime >= 50) {
+        this->inputManager.updateToMouseStatic();
     }
     // 如果没有更新，且上一帧是按下和持续按下，则进true；
     inputManager.updateTrueToPress();
     inputManager.updateFalseToNoActive();
 
-    InputInfo inputInfo{};
-    inputInfo.clickPosition.x = exMessage.x;
-    inputInfo.clickPosition.y = exMessage.y;
+    InputInfo inputInfo;
+    inputInfo.clickPosition = lastMousePosition;
 
     return inputInfo;
 }
@@ -359,8 +380,11 @@ void GlobalInputEventManager::updateInputLogic(const InputInfo &inputInfo) {
                 this->notify(*pMouseInput, SIGNAL(&MouseInput::wheelScrollUp), args);
             } else if (pMouseInput->isScrollDown())
                 this->notify(*pMouseInput, SIGNAL(&MouseInput::wheelScrollDown), args);
-            if (pMouseInput->getIsMoving())
+            if (pMouseInput->getMoveState() == MouseInput::MOVING_STATE) {
                 this->notify(*pMouseInput, SIGNAL(&MouseInput::moving), args);
+            } else if (pMouseInput->getMoveState() == MouseInput::STATIC_STATE) {
+                this->notify(*pMouseInput, SIGNAL(&MouseInput::silence), args);
+            }
         }
     }
 }
