@@ -45,6 +45,8 @@ public:
     virtual void release();
 
     void autoRelease();
+
+    void popFromPool();
 };
 
 class AutoReleasePool {
@@ -60,6 +62,9 @@ public:
     void tryRelease();
 
     void addRef(Ref *ref);
+    void removeRef(Ref *ref);
+
+    unsigned long long getPoolSize();
 };
 
 #endif //BAI2D_AUTO_RELEASE_H

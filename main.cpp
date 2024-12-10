@@ -80,7 +80,7 @@ public:
     }
 
     void dying() {
-        this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::DYING));
+        this->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::DYING))->resetPlayPace();
     }
 
     bai::slot scale(const SlotArgs &args) {
@@ -102,7 +102,6 @@ public:
     bai::slot cameraMoveToMouse(const SlotArgs &args) {
         if (!scene.getCamera().getParentObj()) {
             InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
-            std::cout << inputInfo->clickPosition.x << " " << inputInfo->clickPosition.y << std::endl;
             scene.getCamera().moveToTargetPosition(inputInfo->clickPosition);
         }
     }
@@ -110,7 +109,7 @@ public:
     bai::slot cameraOffsetRefViewCenter(const SlotArgs &args) {
         if (!scene.getCamera().getParentObj() && MOUSE_MIDDLE.isPressing()) {
             InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
-            scene.getCamera().offsetRefViewCenter(inputInfo->clickPosition);
+            scene.getCamera().offsetRefViewCenter(inputInfo->clickPosition, 1, 10, 20, 100);
         }
     }
 };
@@ -128,18 +127,17 @@ int main() {
     player->setPosition(100, 100)->setWidth(100)->setHeight(100);
     player->setSpeed(5);
     player->attach(&scene.getCamera());
-    player->setIsCheckCollision(true);
     player->disableAnimationStateMachine();
 
     Object *pObject = CREATE(Object);
     pObject->setPosition(200, 200);
     pObject->setMesh(new RectMesh(500, 10))->getMesh().castTo<GeometryMesh>()->setColor(RED);
     pObject->setCollision(new RectangleCollision(500, 10));
-    pObject->setIsCheckCollision(true);
-    pObject->setVisible(false);
 
     scene.addObject(pObject);
     scene.addObject(player);
+
+    CREATE(TestPlayer);
 
 
     std::string srcDir = "D:/Users/22190/Desktop/55/Persian Warrior/PNG/";
@@ -224,8 +222,6 @@ void mainLoopFrameHandle() {
 
     scene.render();
 
-//    std::cout << "pressed:" << MOUSE_MIDDLE.isPressed() << std::endl;
-//    std::cout << "pressing:" << MOUSE_MIDDLE.isPressing() << std::endl;
 
     const TCHAR *text;
     text = ("FPS: " + std::to_string(REAL_RENDERING_FPS)).c_str();
@@ -236,4 +232,6 @@ void mainLoopFrameHandle() {
     settextcolor(temp);
 
     EndBatchDraw();
+
+    AutoReleasePool::getInstance().tryRelease();
 }

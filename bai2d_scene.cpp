@@ -87,14 +87,16 @@ Camera *Camera::moveToTargetPosition(POINT point) {
     return this;
 }
 
-Camera *Camera::offsetRefViewCenter(POINT &point, int minSpeed, int maxSpeed, int step) {
-    assert(step <= 500 && step >= 1 && maxSpeed >= minSpeed && minSpeed >= 0 && maxSpeed <= 20);
+Camera *Camera::offsetRefViewCenter(POINT &point, int minSpeed, int maxSpeed, int step, int safeLength) {
+    assert(step >= 1 && maxSpeed >= minSpeed && minSpeed > 0 && safeLength > 0);
     if (!this->getParentObj()) {
         // 根据鼠标远近加减速
         const POINT &center = getViewCenter();
         double dx = point.x - center.x;
         double dy = point.y - center.y;
         double length = std::sqrt(dx * dx + dy * dy);
+        if (length <= safeLength)return this;
+        length -= safeLength;
         double speed = std::min(std::max(length / static_cast<double>(step), static_cast<double>(minSpeed)),
                                 static_cast<double>(maxSpeed));
         POINT towards{static_cast<int>(dx), static_cast<int>(dy)};
@@ -113,6 +115,9 @@ POINT Camera::getViewCenter() {
 
 Scene::Scene(int w, int h) {
     this->camera = new Camera(w, h);
+    this->camera->autoRelease();
+    this->camera->incrementRefCount();
+//    this->autoRelease();
 }
 
 void Scene::render() {
@@ -163,7 +168,7 @@ Scene::~Scene() {
     for (auto object: vector) {
         object->decrementRefCount();
     }
-    delete this->camera;
+    this->camera->decrementRefCount();
 }
 
 Camera &Scene::getCamera() {

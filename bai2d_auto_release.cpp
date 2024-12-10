@@ -22,6 +22,7 @@ bool Ref::isAutoRelease() const {
 
 void Ref::release() {
     if (this->isAutoRelease()) {
+        popFromPool();
         delete this;
     }
 }
@@ -34,9 +35,13 @@ Ref::Ref() {
     refCount = 1;
 }
 
+void Ref::popFromPool() {
+    AutoReleasePool::getInstance().removeRef(this);
+}
+
 void AutoReleasePool::tryRelease() {
     for (auto &ref: refs) {
-        ref->autoRelease();
+        ref->release();
     }
 }
 
@@ -55,6 +60,19 @@ void AutoReleasePool::addRef(Ref *ref) {
         }
     }
     refs.push_back(ref);
+}
+
+unsigned long long AutoReleasePool::getPoolSize() {
+    return this->refs.size();
+}
+
+void AutoReleasePool::removeRef(Ref *ref) {
+    for (int i = 0; i < refs.size(); i++) {
+        if (refs[i] == ref) {
+            refs.erase(refs.begin() + i);
+            return;
+        }
+    }
 }
 
 AutoReleasePool AutoReleasePool::instance;

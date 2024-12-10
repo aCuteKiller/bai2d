@@ -258,6 +258,7 @@ AnimationStateMachine::~AnimationStateMachine() {
 }
 
 AnimationStateMachine *AnimationStateMachine::setCurrentState(byte stateEnum) {
+    assert(this->animations[stateEnum] != nullptr);
     this->currentState = stateEnum;
     if (typeid(MultiImageMesh) == typeid(this->getCurrentAnimation()->getMesh()) && lastState != currentState) {
         this->getCurrentAnimation()->getMesh().castTo<MultiImageMesh>()->resetCurrentIndex();

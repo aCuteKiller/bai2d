@@ -15,6 +15,7 @@ private:
 
     bool renderSelf;
 public:
+
     Camera(int w, int h);
 
     void render(BaseObjectManager &objectManager);
@@ -31,7 +32,7 @@ public:
 
     POINT getViewCenter();
 
-    Camera *offsetRefViewCenter(POINT &point, int minSpeed = 0, int maxSpeed = 5, int step = 200);
+    Camera *offsetRefViewCenter(POINT &point, int minSpeed = 1, int maxSpeed = 5, int step = 200, int safeLength = 100);
 };
 
 class Scene : public Ref {

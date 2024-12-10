@@ -8,7 +8,7 @@
 #include "bai2d_mesh.h"
 #include "bai2d_asset.h"
 
-MultiImageMesh *
+static MultiImageMesh *
 getMultiImageMesh(const std::string &dirName, const std::string &fileNamePrefix, int endIndex, int width, int height,
                   int playInterval, bool isLoop = true) {
     auto *pMesh = new MultiImageMesh(width, height);

@@ -335,4 +335,4 @@ public:
 };
 
 
-#endif / BAI2D_OBJECT_H
+#endif // BAI2D_OBJECT_H
