@@ -112,7 +112,7 @@ void BaseObject::updateRealPosition() {
     BaseObject *obj = getParentObj();
     POINT realPosition = POINT();
     if (obj != nullptr) {
-        obj->updateRealPosition();
+//        obj->updateRealPosition();
         realPosition.x += this->getParentOffset().x;
         realPosition.y += this->getParentOffset().y;
         realPosition.x += obj->getPosition().x;
@@ -174,10 +174,6 @@ void BaseObjectManager::removeObject(BaseObject *object) {
         }
 }
 
-void BaseObjectManager::removeAll() {
-    this->objects.clear();
-}
-
 bool BaseObjectManager::isContains(BaseObject *object) const {
     if (object != nullptr)
         for (auto iterator: this->objects) {
@@ -191,14 +187,7 @@ BaseObjectManager::BaseObjectManager() {
 }
 
 BaseObjectManager::~BaseObjectManager() {
-    this->removeAll();
-}
-
-void BaseObjectManager::showAll() {
-    auto objs = getAllInOneVectorWithSortAndUnique();
-    for (auto iterator: objs) {
-        iterator->update()->draw();
-    }
+    this->objects.clear();
 }
 
 std::vector<BaseObject *> BaseObjectManager::getAllInOneVector() {
@@ -223,20 +212,15 @@ std::vector<BaseObject *> BaseObjectManager::getAllInOneVectorWithSortAndUnique(
     return v;
 }
 
-void BaseObjectManager::updateAll() {
-    auto objs = getAllInOneVectorWithSortAndUnique();
-    for (auto iterator: objs) {
-        iterator->update();
-    }
-}
-
 BaseObject *BaseObject::attach(BaseObject *obj) {
     if (obj != nullptr && !this->attachObjs->isContains(obj)) {
         if (obj->parentObj != nullptr) {
             obj->parentObj->detach(obj);
+            obj->decrementRefCount();
         }
         this->attachObjs->addObject(obj);
         obj->parentObj = this;
+        obj->incrementRefCount();
     }
     return this;
 }
@@ -245,6 +229,8 @@ void BaseObject::detach(BaseObject *object) {
     if (object == nullptr) return;
     this->attachObjs->removeObject(object);
     object->parentObj = nullptr;
+    object->decrementRefCount();
+
 }
 
 BaseObject *BaseObject::getParentObj() {
@@ -261,6 +247,9 @@ POINT BaseObject::getParentOffset() const {
 }
 
 BaseObject::~BaseObject() {
+    for (auto iterator: *this->attachObjs) {
+        iterator->decrementRefCount();
+    }
     delete this->attachObjs;
     this->parentObj = nullptr;
 }
@@ -303,7 +292,7 @@ int BaseObject::getHeight() const {
     return int(height * this->getScale());
 }
 
-BaseObject::BaseObject(const POINT &position, int w, int h) : visible(true), rotateAngle(0), renderingIndex(0) {
+BaseObject::BaseObject(const POINT &position, int w, int h) : visible(true), rotateAngle(0), renderingIndex(0), Ref() {
     assert(w > 0 && h > 0);
     this->attachObjs = new BaseObjectManager();
     this->parentObj = nullptr;
@@ -356,13 +345,16 @@ BaseObject *BaseObject::offsetPosition(POINT offset) {
     return this;
 }
 
+BaseObjectManager &BaseObject::getChildren() {
+    return *this->attachObjs;
+}
+
 void Pawn::updateAction() {
     // 根据移动向量，speed 通过三角函数 重新计算移动距离，然后将位置加上距离
     double angle = atan2(this->towards.y, this->towards.x);
     double x = this->towards.x != 0 ? speed * cos(angle) : 0;
     double y = this->towards.y != 0 ? speed * sin(angle) : 0;
-    this->setPosition(this->getPosition().x + static_cast<int>(std::round(x)),
-                      this->getPosition().y + static_cast<int>(std::round(y)));
+    this->offsetPosition(static_cast<int>(std::round(x)), static_cast<int>(std::round(y)));
 }
 
 void Pawn::setSpeed(int s) {
@@ -522,12 +514,15 @@ Object::Object(const POINT &position, int w, int h, RectMesh *mesh, CollisionAbl
     this->setWidth(w);
     this->setHeight(h);
     if (mesh == nullptr) {
-        this->mesh = new RectMesh(position, this->getWidth(), this->getHeight());
+        auto *pMesh = new RectMesh(position, w, h);
+        pMesh->setColor(BLACK);
+        this->mesh = pMesh;
+        pMesh = nullptr;
     } else {
         this->mesh = mesh;
     }
     if (collision == nullptr)
-        this->collision = new RectangleCollision(this->getPosition(), this->getWidth(), this->getHeight());
+        this->collision = new RectangleCollision(position, w, h);
     else
         this->collision = collision;
 }
@@ -566,17 +561,24 @@ AnimationStateMachine &Actor::getAnimationStateMachine() {
 
 Actor *Actor::update() {
     Object::update();
-    if (this->animationStateMachine.getCurrentAnimation()) {
+    if (this->isEnableAnimationStateMachine) {
         this->animationStateMachine.updateAll(this->getPosition(), this->getRotateAngle());
+    } else {
+        this->mesh->setPosition(this->getPosition())->setRotateAngle(this->getRotateAngle());
     }
     return this;
 }
 
 void Actor::draw() {
-    if (this->getIsVisible())
-        if (this->animationStateMachine.getCurrentAnimation()) {
-            this->animationStateMachine.getCurrentAnimation()->getMesh().show();
+    if (this->getIsVisible()) {
+        if (this->isEnableAnimationStateMachine) {
+            if (this->animationStateMachine.getCurrentAnimation()) {
+                this->animationStateMachine.getCurrentAnimation()->getMesh().show();
+            }
+        } else {
+            this->mesh->show();
         }
+    }
     if (this->isCheckCollision)
         this->collision->check();
 }
@@ -584,6 +586,21 @@ void Actor::draw() {
 Actor *Actor::setScale(double s) {
     Object::setScale(s);
     this->animationStateMachine.setScale(s);
+    return this;
+}
+
+Actor::Actor() : Object() {
+    animationStateMachine = AnimationStateMachine();
+    this->isEnableAnimationStateMachine = false;
+}
+
+Actor *Actor::enableAnimationStateMachine() {
+    this->isEnableAnimationStateMachine = true;
+    return this;
+}
+
+Actor *Actor::disableAnimationStateMachine() {
+    this->isEnableAnimationStateMachine = true;
     return this;
 }
 

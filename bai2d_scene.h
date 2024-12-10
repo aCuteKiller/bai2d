@@ -21,7 +21,7 @@ public:
 
     std::vector<Object *> getObjectsWhichInCameraView(BaseObjectManager &objectManager);
 
-    static void offsetObjectMesh(std::vector<Object *> *objects, POINT offset);
+    void offsetObjectMesh(std::vector<Object *> *objects, POINT offset);
 
     Camera *setRenderSelf(bool b);
 
@@ -34,17 +34,19 @@ public:
     Camera *offsetRefViewCenter(POINT &point, int minSpeed = 0, int maxSpeed = 5, int step = 200);
 };
 
-class Scene {
+class Scene : public Ref {
 private:
     BaseObjectManager objectManager;
     Camera *camera;
 
     Scene *update();
 
+    void updateObject(BaseObject *obj);
+
 public:
     Scene(int w, int h);
 
-    ~Scene();
+    ~Scene() override;
 
     void render();
 
@@ -53,6 +55,8 @@ public:
     Scene *removeObject(Object *object);
 
     Camera &getCamera();
+
+    Scene *setCamera(Camera *c);
 };
 
 

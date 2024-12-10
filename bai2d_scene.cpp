@@ -8,8 +8,9 @@
 Camera::Camera(int w, int h) : Object(w, h) {
     assert(w > 0 && h > 0);
     this->collision = new RectangleCollision(w, h);
-    this->getMesh().castTo<GeometryMesh>()->setColor(BLUE)->setLineStyle(PS_DASH)->setLineThickness(2)->setScale(.98);
+    this->setMesh(new CameraDefaultMesh(w, h));
     this->renderSelf = true;
+    this->getMesh().offsetPosition(this->getOriginOffset());
 }
 
 void Camera::render(BaseObjectManager &objectManager) {
@@ -23,9 +24,10 @@ void Camera::render(BaseObjectManager &objectManager) {
     for (auto object: toRenderObjs) {
         object->draw();
     }
-    if (this->getParentObj())
-        this->getMesh().offsetPosition(offset);
     if (this->renderSelf) {
+        if (this->getParentObj())
+            this->update();
+        this->getMesh().offsetPosition(offset);
         this->draw();
     }
 }
@@ -52,14 +54,15 @@ std::vector<Object *> Camera::getObjectsWhichInCameraView(BaseObjectManager &obj
 
 void Camera::offsetObjectMesh(std::vector<Object *> *objects, POINT offset) {
     for (auto object: *objects) {
+        if (this->getParentObj() == object) {
+            object->update();
+        }
         object->getMesh().offsetPosition(offset);
         object->getCollision()->getMesh().offsetPosition(offset);
-        try {
-            Actor *actor = object->castTo<Actor>();
-            if (actor != nullptr) {
-                actor->getAnimationStateMachine().offsetAllPosition(offset);
-            }
-        } catch (std::exception &e) {}
+        Actor *actor = object->castTo<Actor>();
+        if (actor != nullptr) {
+            actor->getAnimationStateMachine().offsetAllPosition(offset);
+        }
     }
 }
 
@@ -89,11 +92,12 @@ Camera *Camera::offsetRefViewCenter(POINT &point, int minSpeed, int maxSpeed, in
     if (!this->getParentObj()) {
         // 根据鼠标远近加减速
         const POINT &center = getViewCenter();
-        auto dx = float(point.x - center.x);
-        auto dy = float(point.y - center.y);
-        float length = std::sqrt(dx * dx + dy * dy);
-        float speed = std::min(std::max(length / (float) step, (float) minSpeed), (float) maxSpeed);
-        POINT towards{point.x - center.x, point.y - center.y};
+        double dx = point.x - center.x;
+        double dy = point.y - center.y;
+        double length = std::sqrt(dx * dx + dy * dy);
+        double speed = std::min(std::max(length / static_cast<double>(step), static_cast<double>(minSpeed)),
+                                static_cast<double>(maxSpeed));
+        POINT towards{static_cast<int>(dx), static_cast<int>(dy)};
         double angle = atan2(towards.y, towards.x);
         int x = towards.x != 0 ? static_cast<int>(round(speed * cos(angle))) : 0;
         int y = towards.y != 0 ? static_cast<int>(round(speed * sin(angle))) : 0;
@@ -117,28 +121,60 @@ void Scene::render() {
 }
 
 Scene *Scene::addObject(Object *object) {
-    this->objectManager.addObject(object);
+    if (object) {
+        object->incrementRefCount();
+        this->objectManager.addObject(object);
+    }
     return this;
 }
 
 Scene *Scene::removeObject(Object *object) {
-    this->objectManager.removeObject(object);
+    if (object) {
+        object->decrementRefCount();
+        this->objectManager.removeObject(object);
+    }
     return this;
 }
 
 Scene *Scene::update() {
-    this->objectManager.updateAll();
+    const std::vector<BaseObject *> &vector = this->objectManager.getAllInOneVectorWithSortAndUnique();
+    std::vector<BaseObject *> objs;
+    for (auto obj: vector) {
+        if (!obj->getParentObj())
+            objs.push_back(obj);
+    }
+    for (auto obj: objs) {
+        updateObject(obj);
+    }
+    this->camera->update();
     return this;
 }
+
+void Scene::updateObject(BaseObject *obj) {
+    obj->update();
+    for (auto o: obj->getChildren()) {
+        updateObject(o);
+    }
+}
+
 
 Scene::~Scene() {
     const std::vector<BaseObject *> &vector = this->objectManager.getAllInOneVectorWithSortAndUnique();
     for (auto object: vector) {
-        delete object;
+        object->decrementRefCount();
     }
     delete this->camera;
 }
 
 Camera &Scene::getCamera() {
     return *this->camera;
+}
+
+Scene *Scene::setCamera(Camera *c) {
+    if (c) {
+        this->camera->decrementRefCount();
+        this->camera = c;
+        this->camera->incrementRefCount();
+    }
+    return this;
 }

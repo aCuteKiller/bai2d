@@ -117,6 +117,34 @@ RectMesh::RectMesh(const POINT &position, int width, int height) : GeometryMesh(
 
 }
 
+POINT RectMesh::getLeftTop() const {
+    return EasyXUtils::getRotatePoint(this->position,
+                                      {this->position.x - this->getWidth() / 2,
+                                       this->position.y - this->getHeight() / 2},
+                                      this->rotateAngle);
+}
+
+POINT RectMesh::getRightBottom() const {
+    return EasyXUtils::getRotatePoint(this->position,
+                                      {this->position.x + this->getWidth() / 2,
+                                       this->position.y + this->getHeight() / 2},
+                                      this->rotateAngle);
+}
+
+POINT RectMesh::getLeftBottom() const {
+    return EasyXUtils::getRotatePoint(this->position,
+                                      {this->position.x - this->getWidth() / 2,
+                                       this->position.y + this->getHeight() / 2},
+                                      this->rotateAngle);
+}
+
+POINT RectMesh::getRightTop() const {
+    return EasyXUtils::getRotatePoint(this->position,
+                                      {this->position.x + this->getWidth() / 2,
+                                       this->position.y - this->getHeight() / 2},
+                                      this->rotateAngle);
+}
+
 GeometryMesh *GeometryMesh::setFill(bool b) {
     this->fill = b;
     return this;
@@ -470,4 +498,21 @@ ReversePlayAble *ReversePlayAble::setIsReverse(bool reverse) {
 
 bool ReversePlayAble::isReverse() const {
     return this->isReversePlay;
+}
+
+CameraDefaultMesh::CameraDefaultMesh(int width, int height) : RectMesh(width, height) {
+    this->innerMesh = RectMesh(width / 3, height / 3);
+    setColor(RGB(208, 16, 76))->setLineStyle(PS_DASH)->setLineThickness(2)->setScale(.98);
+}
+
+void CameraDefaultMesh::draw() {
+    RectMesh::draw();
+    this->innerMesh.setPosition(this->getPosition());
+    line(getLeftTop().x, getLeftTop().y, this->innerMesh.getLeftTop().x, this->innerMesh.getLeftTop().y);
+    line(getLeftBottom().x, getLeftBottom().y, this->innerMesh.getLeftBottom().x,
+         this->innerMesh.getLeftBottom().y);
+    line(getRightTop().x, getRightTop().y, this->innerMesh.getRightTop().x, this->innerMesh.getRightTop().y);
+    line(getRightBottom().x, getRightBottom().y, this->innerMesh.getRightBottom().x,
+         this->innerMesh.getRightBottom().y);
+    this->innerMesh.draw();
 }

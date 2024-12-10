@@ -135,6 +135,8 @@ public:
 
     explicit RectMesh(const POINT &position, int width, int height);
 
+    explicit RectMesh() : RectMesh(50, 50) {};
+
     RectMesh *setWidth(int w);
 
     RectMesh *setHeight(int h);
@@ -142,6 +144,23 @@ public:
     [[nodiscard]] int getWidth() const;
 
     [[nodiscard]] int getHeight() const;
+
+    void draw() override;
+
+    [[nodiscard]] POINT getLeftTop() const;
+
+    [[nodiscard]] POINT getRightTop() const;
+
+    [[nodiscard]] POINT getLeftBottom() const;
+
+    [[nodiscard]] POINT getRightBottom() const;
+};
+
+class CameraDefaultMesh : public RectMesh {
+private:
+    RectMesh innerMesh;
+public:
+    CameraDefaultMesh(int width, int height);
 
     void draw() override;
 };

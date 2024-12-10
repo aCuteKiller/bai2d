@@ -69,11 +69,13 @@ void Event::removeExecutor(Slot slot_, EventAble &receiver) {
     }
 }
 
-void BaseEventManager::notify(const EventAble &sender, Signal signal_,const SlotArgs &slotArgs) {
+void BaseEventManager::notify(const EventAble &sender, Signal signal_, const SlotArgs &slotArgs) {
     for (auto *e: events) {
-        if (e->getSender() == &sender && e->getSignal() == signal_) {
-            e->emit(slotArgs);
-        }
+        try {
+            if (e->getSender() == &sender && e->getSignal() == signal_) {
+                e->emit(slotArgs);
+            }
+        } catch (const std::exception &e) {}
     }
 }
 

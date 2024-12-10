@@ -5,7 +5,8 @@
 #include "bai2d_shortcut_func.h"
 #include "bai2d_scene.h"
 
-// TODO->垃圾回收、任务机制、物理
+// TODO->垃圾回收、任务机制、物理、图层
+
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 640
 Scene scene(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -23,26 +24,30 @@ enum struct TestObjectStateEnum : byte {
     JUMP_LOOP,
 };
 
-class TestObj : public Pawn {
+class TestPlayer : public Pawn {
 private:
 public:
+    TestPlayer() : Pawn() {};
+
+    CREATE_FUNC(TestPlayer);
+
     bai::slot resetVectorX(const SlotArgs &args) override {
-        if (!(KEY_A.isPressing() || KEY_D.isPressing()))
-            Pawn::resetVectorX(args);
-        else if (KEY_A.isPressing()) {
+        if (KEY_A.isPressing()) {
             this->moveLeft(args);
         } else if (KEY_D.isPressing()) {
             this->moveRight(args);
+        } else {
+            Pawn::resetVectorX(args);
         }
     }
 
     bai::slot resetVectorY(const SlotArgs &args) override {
-        if (!(KEY_W.isPressing() || KEY_S.isPressing()))
-            Pawn::resetVectorY(args);
-        else if (KEY_W.isPressing()) {
+        if (KEY_W.isPressing()) {
             this->moveUp(args);
         } else if (KEY_S.isPressing()) {
             this->moveDown(args);
+        } else {
+            Pawn::resetVectorY(args);
         }
     }
 
@@ -103,15 +108,6 @@ public:
     }
 
     bai::slot cameraOffsetRefViewCenter(const SlotArgs &args) {
-        std::cout << "moving" << std::endl;
-        if (!scene.getCamera().getParentObj() && MOUSE_MIDDLE.isPressing()) {
-            InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
-            scene.getCamera().offsetRefViewCenter(inputInfo->clickPosition);
-        }
-    }
-
-    bai::slot test(const SlotArgs &args) {
-        std::cout << "static" << std::endl;
         if (!scene.getCamera().getParentObj() && MOUSE_MIDDLE.isPressing()) {
             InputInfo *inputInfo = const_cast<SlotArgs &>(args).castTo<InputInfo>();
             scene.getCamera().offsetRefViewCenter(inputInfo->clickPosition);
@@ -119,98 +115,79 @@ public:
     }
 };
 
-TestObj testObj1, testObj2, testObj3;
-
 int main() {
     // 设置控制台输出代码页为UTF-8
     SetConsoleOutputCP(CP_UTF8);
-//    scene.getCamera().setPosition(320, 240);
-    scene.getCamera().setRenderSelf(true);
-    testObj1.attach(&scene.getCamera());
-    auto *pObject1 = new Object();
-    pObject1->setMesh(new CircleMesh(90))->getMesh().castTo<GeometryMesh>()->setColor(RED);
-//    testObj1.attach(pObject1);
     initgraph(WINDOW_WIDTH, WINDOW_HEIGHT);
-
+    setbkcolor(WHITE);
     GlobalInputEventManager &globalInputEventManager = GlobalInputEventManager::getInstance();
 
-//    testObj1.attach(&testObj2);
-    testObj2.setPosition(50, 50);
-    testObj2.setParentOffset(40, 40);
-    testObj3.setParentOffset(-20, 20);
-    testObj3.setPosition(300, 300);
-//    testObj2.attach(&testObj3);
-    testObj2.setPosition(100, 100);
-//    testObj3.setRotateAngle(30);
-//    testObj1.setRotateAngle(45);
-    auto *pObject = new Object(600, 100);
-    pObject->setPosition(320, 240);
-    pObject->getMesh().castTo<GeometryMesh>()->setColor(RED);
+    scene.getCamera().setRenderSelf(true);
+
+    TestPlayer *player = CREATE(TestPlayer);
+    player->setPosition(100, 100)->setWidth(100)->setHeight(100);
+    player->setSpeed(5);
+    player->attach(&scene.getCamera());
+    player->setIsCheckCollision(true);
+    player->disableAnimationStateMachine();
+
+    Object *pObject = CREATE(Object);
+    pObject->setPosition(200, 200);
+    pObject->setMesh(new RectMesh(500, 10))->getMesh().castTo<GeometryMesh>()->setColor(RED);
+    pObject->setCollision(new RectangleCollision(500, 10));
+    pObject->setIsCheckCollision(true);
+    pObject->setVisible(false);
+
     scene.addObject(pObject);
+    scene.addObject(player);
 
-    setbkcolor(WHITE);
 
+    std::string srcDir = "D:/Users/22190/Desktop/55/Persian Warrior/PNG/";
+    auto *pDyingMesh = getMultiImageMesh(srcDir, "PNG Sequences/Dying/Dying_", 14, player->getWidth(),
+                                         player->getHeight(), 50,
+                                         false);
+    auto *pIdleMesh = getMultiImageMesh(srcDir, "PNG Sequences/Idle/Idle_", 17, player->getWidth(), player->getHeight(),
+                                        100);
+    auto *pRunningMesh = getMultiImageMesh(srcDir, "PNG Sequences/Running/Running_", 11, player->getWidth(),
+                                           player->getHeight(), 50);
+    auto *pFallingMesh = getMultiImageMesh(srcDir, "PNG Sequences/Falling Down/Falling Down_", 5, player->getWidth(),
+                                           player->getHeight(), 50, false);
+    auto *pStartJumpMesh = getMultiImageMesh(srcDir, "PNG Sequences/Jump Start/Jump Start_", 5, player->getWidth(),
+                                             player->getHeight(), 50, false);
+    auto *pJumpLoopMesh = getMultiImageMesh(srcDir, "PNG Sequences/Jump Loop/Jump Loop_", 5, player->getWidth(),
+                                            player->getHeight(), 50);
 
-    std::string assetDir = "D:/Users/22190/Desktop/55/Persian Warrior/PNG/PNG Sequences/";
-    auto *pDyingMesh = getMultiImageMesh(assetDir + "Dying", "Dying_", 14, 200, 200, 50, false);
-    auto *pIdleMesh = getMultiImageMesh(assetDir + "Idle", "Idle_", 17, 200, 200, 100);
-    auto *pRunningMesh = getMultiImageMesh(assetDir + "Running", "Running_", 11, 200, 200, 50);
-    auto *pFallingMesh = getMultiImageMesh(assetDir + "Falling Down", "Falling Down_", 5, 200, 200, 50, false);
-    auto *pStartJumpMesh = getMultiImageMesh(assetDir + "Jump Start", "Jump Start_", 5, 200, 200, 50, false);
-    auto *pJumpLoopMesh = getMultiImageMesh(assetDir + "Jump Loop", "Jump Loop_", 5, 200, 200, 50);
+    player->getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::DYING),
+                                                    new ObjectStateAnimation(pDyingMesh));
+    player->getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::IDLE),
+                                                    new ObjectStateAnimation(pIdleMesh));
+    player->getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::RUNNING),
+                                                    new ObjectStateAnimation(pRunningMesh));
+    player->getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::START_JUMP),
+                                                    new ObjectStateAnimation(pStartJumpMesh));
+    player->getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::FALLING),
+                                                    new ObjectStateAnimation(pFallingMesh));
+    player->getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::JUMP_LOOP),
+                                                    new ObjectStateAnimation(pJumpLoopMesh));
 
-//    testObj1.setMesh(new ImageMesh("Dying_001.png", 90, 90));
-    testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::DYING),
-                                                     new ObjectStateAnimation(pDyingMesh));
-    testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::IDLE),
-                                                     new ObjectStateAnimation(pIdleMesh));
-    testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::RUNNING),
-                                                     new ObjectStateAnimation(pRunningMesh));
-    testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::START_JUMP),
-                                                     new ObjectStateAnimation(pStartJumpMesh));
-    testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::FALLING),
-                                                     new ObjectStateAnimation(pFallingMesh));
-    testObj1.getAnimationStateMachine().addAnimation(byte(TestObjectStateEnum::JUMP_LOOP),
-                                                     new ObjectStateAnimation(pJumpLoopMesh));
+    player->getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::IDLE));
 
-    testObj1.getAnimationStateMachine().setCurrentState(byte(TestObjectStateEnum::IDLE));
-    testObj1.setRenderingIndex(10);
-    testObj1.setMaxJumpTimes(2);
+    globalInputEventManager.connect(KEY_A, SIGNAL(&KeyInput::pressed), *player, SLOT(&TestPlayer::moveLeft));
+    globalInputEventManager.connect(KEY_D, SIGNAL(&KeyInput::pressed), *player, SLOT(&TestPlayer::moveRight));
+    globalInputEventManager.connect(KEY_V, SIGNAL(&KeyInput::pressed), *player, SLOT(&TestPlayer::dying));
+    globalInputEventManager.connect(KEY_SPACE, SIGNAL(&KeyInput::pressed), *player, SLOT(&TestPlayer::jump));
+    globalInputEventManager.connect(KEY_E, SIGNAL(&KeyInput::pressed), *player, SLOT(&TestPlayer::scale));
+    globalInputEventManager.connect(KEY_Q, SIGNAL(&KeyInput::pressed), *player, SLOT(&TestPlayer::shrink));
+    globalInputEventManager.connect(KEY_F, SIGNAL(&KeyInput::pressed), *player, SLOT(&TestPlayer::attachCamera));
+    globalInputEventManager.connect(MOUSE_LEFT, SIGNAL(&MouseInput::pressed), *player,
+                                    SLOT(&TestPlayer::cameraMoveToMouse));
+    globalInputEventManager.connect(MOUSE_MOVING, SIGNAL(&MouseInput::moving), *player,
+                                    SLOT(&TestPlayer::cameraOffsetRefViewCenter));
+    globalInputEventManager.connect(MOUSE_MOVING, SIGNAL(&MouseInput::silence), *player,
+                                    SLOT(&TestPlayer::cameraOffsetRefViewCenter));
 
-    testObj2.setAnchor(ObjectAnchor::RIGHT_BOTTOM);
-    testObj1.setPosition(320, 240);
-    testObj2.setMesh(new CircleMesh(50));
-    testObj2.getMesh().castTo<GeometryMesh>()->setColor(BLACK);
-    testObj2.getMesh().castTo<GeometryMesh>()->setColor(BLACK);
-    dynamic_cast<GeometryMesh &> (testObj2.getMesh()).setFill(true);
-    scene.addObject(&testObj1);
-//    scene.addObject(&testObj3);
-
-    testObj1.setSpeed(3);
-//    testObj1.setRotateAngle(45);
-    testObj1.setIsCheckCollision(true)->getCollision()->getMesh().castTo<GeometryMesh>()->setColor(RED);
-    testObj1.getCollision()->castTo<RectangleCollision>()->setWidth(60)->setHeight(100);
-
-//    globalInputEventManager.connect(KEY_W, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveUp));
-//    globalInputEventManager.connect(KEY_S, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveDown));
-    globalInputEventManager.connect(KEY_A, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveLeft));
-    globalInputEventManager.connect(KEY_D, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::moveRight));
-    globalInputEventManager.connect(KEY_V, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::dying));
-    globalInputEventManager.connect(KEY_SPACE, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::jump));
-    globalInputEventManager.connect(KEY_E, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::scale));
-    globalInputEventManager.connect(KEY_Q, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::shrink));
-    globalInputEventManager.connect(KEY_F, SIGNAL(&KeyInput::pressed), testObj1, SLOT(&TestObj::attachCamera));
-    globalInputEventManager.connect(MOUSE_LEFT, SIGNAL(&MouseInput::pressed), testObj1,
-                                    SLOT(&TestObj::cameraMoveToMouse));
-    globalInputEventManager.connect(MOUSE_MOVING, SIGNAL(&MouseInput::moving), testObj1,
-                                    SLOT(&TestObj::cameraOffsetRefViewCenter));
-    globalInputEventManager.connect(MOUSE_MOVING, SIGNAL(&MouseInput::silence), testObj1,
-                                    SLOT(&TestObj::test));
-
-//    globalInputEventManager.connect(KEY_W, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
-//    globalInputEventManager.connect(KEY_S, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorY));
-    globalInputEventManager.connect(KEY_A, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorX));
-    globalInputEventManager.connect(KEY_D, SIGNAL(&KeyInput::released), testObj1, SLOT(&TestObj::resetVectorX));
+    globalInputEventManager.connect(KEY_A, SIGNAL(&KeyInput::released), *player, SLOT(&TestPlayer::resetVectorX));
+    globalInputEventManager.connect(KEY_D, SIGNAL(&KeyInput::released), *player, SLOT(&TestPlayer::resetVectorX));
 
     const std::future<void> &future = globalInputEventManager.runInputEventLoop();
     mainLoop();

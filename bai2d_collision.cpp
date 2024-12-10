@@ -11,6 +11,10 @@ RectangleCollision::RectangleCollision(const POINT &position, int width, int hei
         CollisionCategory::RECTANGLE, position, new RectMesh(position, width, height)) {
     this->width = width;
     this->height = height;
+    auto *pMesh = new RectMesh(position, this->getWidth(), this->getHeight());
+    pMesh->setColor(RED);
+    this->mesh = pMesh;
+    pMesh = nullptr;
 }
 
 POINT RectangleCollision::getLeftTop() const {

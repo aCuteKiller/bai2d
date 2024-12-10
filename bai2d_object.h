@@ -18,6 +18,7 @@
 #include "bai2d_asset.h"
 #include "bai2d_mesh.h"
 #include "bai2d_collision.h"
+#include "bai2d_auto_release.h"
 
 class BaseObject;
 
@@ -31,7 +32,7 @@ enum ObjectAnchor {
     CENTER,
 };
 
-class BaseObject : public EventAble {
+class BaseObject : public EventAble, public Ref {
 private:
     bool visible;
     POINT position{};
@@ -50,8 +51,6 @@ protected:
 
     void updateRealPosition();
 
-    BaseObject *setWidth(int w);
-
 public:
 
     explicit BaseObject();
@@ -60,7 +59,7 @@ public:
 
     explicit BaseObject(const POINT &position, int w, int h);
 
-    virtual ~BaseObject();
+    ~BaseObject() override;
 
     virtual void draw() = 0;
 
@@ -108,6 +107,8 @@ public:
 
     [[nodiscard]] int getWidth() const;
 
+    BaseObject *setWidth(int w);
+
     BaseObject *setHeight(int h);
 
     [[nodiscard]] int getHeight() const;
@@ -128,6 +129,8 @@ public:
             throw std::runtime_error(e.what());
         }
     }
+
+    BaseObjectManager &getChildren();
 };
 
 class Object : public BaseObject {
@@ -152,6 +155,8 @@ public:
 
     explicit Object(const POINT &position, int w, int h, RectMesh *mesh, CollisionAble *collision);
 
+    CREATE_FUNC(Object);
+
     Object *update() override;
 
     Object *setMesh(Mesh *m);
@@ -175,7 +180,12 @@ public:
 class Actor : public Object {
 private:
     AnimationStateMachine animationStateMachine;
+    bool isEnableAnimationStateMachine;
 public:
+    Actor();
+
+    CREATE_FUNC(Actor);
+
     Actor *update() override;
 
     void draw() override;
@@ -183,6 +193,10 @@ public:
     Actor *setScale(double s) override;
 
     AnimationStateMachine &getAnimationStateMachine();
+
+    Actor *enableAnimationStateMachine();
+
+    Actor *disableAnimationStateMachine();
 };
 
 class Pawn : public Actor {
@@ -207,12 +221,14 @@ private:
 
     void jumpOneStep();
 
+    virtual void updateAction();
+
 public:
     Pawn();
 
     Pawn *update() override;
 
-    virtual void updateAction();
+    CREATE_FUNC(Pawn);
 
     virtual bai::slot moveUp(const SlotArgs &args);
 
@@ -294,12 +310,6 @@ public:
     void removeObject(BaseObject *object);
 
     void removeObject(int index);
-
-    void removeAll();
-
-    void showAll();
-
-    void updateAll();
 
     // 添加 begin() 和 end() 成员函数
     std::vector<BaseObject *>::iterator begin() {

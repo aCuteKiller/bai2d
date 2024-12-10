@@ -5,7 +5,7 @@
 #ifndef BAI2D_ASSET_H
 #define BAI2D_ASSET_H
 
-#pragma once;
+#pragma once
 
 #include <vector>
 #include <set>
