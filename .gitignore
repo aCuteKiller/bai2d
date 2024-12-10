@@ -54,4 +54,4 @@ test/
 # 依赖管理工具相关文件（例如vcpkg等）
 vcpkg/
 
-!/EasyX
+!*/EasyX/*
